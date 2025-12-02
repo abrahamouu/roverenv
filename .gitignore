@@ -7,3 +7,9 @@ bin/
 pyvenv.cfg
 
 
+lib/
+lib64/
+seniordesign/
+
+lib64
+
