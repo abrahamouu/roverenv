@@ -1,0 +1,9 @@
+# pycache
+__pycache__/
+*.pycache
+
+bin/
+
+pyvenv.cfg
+
+
