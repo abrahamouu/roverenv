@@ -1,12 +1,15 @@
-from sensors.gps import get_gps
+import gps
 import time
 
+session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
 print("Testing GPS...")
 
 while True:
-    lat, lon = get_gps()
-    if lat is None:
-        print("Waiting for GPS fix...")
-    else:
-        print(f"Lat={lat}, Lon={lon}")
-    time.sleep(1)
+    report = session.next()
+
+    if report['class'] == 'TPV':
+        lat = getattr(report, 'lat', None)
+        lon = getattr(report, 'lon', None)
+
+        if lat is not None and lon is not None:
+            print(f"Lat:{lat}, Long:{lon}")

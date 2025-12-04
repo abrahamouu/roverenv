@@ -1,7 +1,7 @@
 # sensors/heading.py
 import math
-from sensors.magnetometer import read_mag_raw
-from sensors.imu import get_accel
+from magnetometer import read_mag_raw
+from imu import get_accel
 
 def get_heading_tilt_compensated():
     """

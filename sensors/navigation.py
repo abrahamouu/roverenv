@@ -3,11 +3,11 @@
 import math
 import time
 
-from sensors.gps import get_gps
-from sensors.heading import get_heading_tilt_compensated
+from gpssensor import get_gps
+from heading import get_heading_tilt_compensated
 
 # Import your motor functions
-from motor_control import forward, stop, turn_left, turn_right
+from motor_helper import forward, stop, turn_left, turn_right
 
 # -----------------------------
 # Distance + Bearing Functions
@@ -81,7 +81,7 @@ def go_to_node(target_lat, target_lon):
         err = heading_error(bearing, heading)
 
         # ---------- Navigation Logic ----------
-        if abs(err) > 15:
+        if abs(err) > 25:
             # Rover is not facing the target → rotate in place
             print(f"Large error ({err:.2f}) — rotating...")
             if err > 0:

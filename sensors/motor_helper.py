@@ -101,10 +101,10 @@ def turn_left(speed = 1.0):
     # lb_motor("forward", speed * 0.6)
     # rf_motor("forward", speed)
     # rb_motor("forward", speed)
-    lf_motor("backward", speed)
-    lb_motor("backward", speed)
-    rf_motor("forward", speed * 0.6)
-    rb_motor("forward", speed* 0.6)
+    lf_motor("backward", speed* 0.2)
+    lb_motor("backward", speed* 0.2)
+    rf_motor("forward", speed * 0.2)
+    rb_motor("forward", speed* 0.2)
 
 
 def turn_right(speed = 1.0):
@@ -112,10 +112,10 @@ def turn_right(speed = 1.0):
     # lb_motor("forward", speed)
     # rf_motor("forward", speed * 0.6)
     # rb_motor("forward", speed * 0.6)
-    lf_motor("forward", speed * 0.6)
-    lb_motor("forward", speed * 0.6)
-    rf_motor("backward", speed)
-    rb_motor("backward", speed)
+    lf_motor("forward", speed * 0.2)
+    lb_motor("forward", speed * 0.2)
+    rf_motor("backward", speed* 0.2)
+    rb_motor("backward", speed* 0.2)
 
 # for more fine-tuned navigation, might not need this
 def steer(speed_left, speed_right):
