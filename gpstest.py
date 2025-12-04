@@ -1,12 +1,12 @@
-import gps
+from sensors.gps import get_gps
+import time
 
-# Connect to the gpsd daemon
-session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+print("Testing GPS...")
 
 while True:
-    report = session.next()
-    
-    if report['class'] == 'TPV':
-        if hasattr(report, 'lat') and hasattr(report, 'lon'):
-            print(f"Latitude: {report.lat}, Longitude: {report.lon}")
-   		
+    lat, lon = get_gps()
+    if lat is None:
+        print("Waiting for GPS fix...")
+    else:
+        print(f"Lat={lat}, Lon={lon}")
+    time.sleep(1)
