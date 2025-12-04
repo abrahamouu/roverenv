@@ -97,17 +97,25 @@ def backward(speed = 1.0):
     
 # smooth turn, might change based on implementation
 def turn_left(speed = 1.0):
-    lf_motor("forward", speed * 0.6)
-    lb_motor("forward", speed * 0.6)
-    rf_motor("forward", speed)
-    rb_motor("forward", speed)
+    # lf_motor("forward", speed * 0.6)
+    # lb_motor("forward", speed * 0.6)
+    # rf_motor("forward", speed)
+    # rb_motor("forward", speed)
+    lf_motor("backward", speed)
+    lb_motor("backward", speed)
+    rf_motor("forward", speed * 0.6)
+    rb_motor("forward", speed* 0.6)
 
 
 def turn_right(speed = 1.0):
-    lf_motor("forward", speed)
-    lb_motor("forward", speed)
-    rf_motor("forward", speed * 0.6)
-    rb_motor("forward", speed * 0.6)
+    # lf_motor("forward", speed)
+    # lb_motor("forward", speed)
+    # rf_motor("forward", speed * 0.6)
+    # rb_motor("forward", speed * 0.6)
+    lf_motor("forward", speed * 0.6)
+    lb_motor("forward", speed * 0.6)
+    rf_motor("backward", speed)
+    rb_motor("backward", speed)
 
 # for more fine-tuned navigation, might not need this
 def steer(speed_left, speed_right):

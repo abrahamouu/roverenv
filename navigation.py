@@ -81,25 +81,19 @@ def go_to_node(target_lat, target_lon):
         err = heading_error(bearing, heading)
 
         # ---------- Navigation Logic ----------
-        if abs(err) > 10:
+        if abs(err) > 15:
             # Rover is not facing the target → rotate in place
             print(f"Large error ({err:.2f}) — rotating...")
             if err > 0:
-                turn_right(0.5)
+                turn_right(1)
             else:
-                turn_left(0.5)
+                turn_left(1)
 
+        elif abs(err) > 4:
+            if err > 0:
+                turn_right(1)
+            else:
+                turn_left(1)
         else:
-            # Heading good → drive forward
-            print(f"Driving forward. Error: {err:.2f}")
             forward(0.7)
-
-            # Small corrections while moving
-            if err > 3:
-                print("Adjust Right")
-                turn_right(0.4)
-            elif err < -3:
-                print("Adjust Left")
-                turn_left(0.4)
-
         time.sleep(0.2)
