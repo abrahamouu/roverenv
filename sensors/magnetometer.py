@@ -10,17 +10,15 @@ def init_mag():
         _mag = BMM150()
     return _mag
 
-
-def read_mag_raw():
-    """
-    Returns raw magnetometer values (mx, my, mz)
-    """
+def ensure_initialized():
     global _mag
     if _mag is None:
         init_mag()
 
-    mx, my, mz = _mag.read_mag_data()
-    return mx, my, mz
+
+def read_mag_raw():
+    ensure_initialized()
+    return _mag.read_mag_data()
 
 
 def get_heading_basic():
