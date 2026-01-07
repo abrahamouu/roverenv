@@ -37,10 +37,10 @@ def lf_motor(direction, speed = 1.0):
     lf_enable.value = speed
 
 def lb_motor(direction, speed = 1.0):
-    if direction == "forward":
+    if direction == "backward":
         lb_in1.on()
         lb_in2.off() 
-    elif direction == "backward":
+    elif direction == "forward":
         lb_in1.off()
         lb_in2.on()  
     else:

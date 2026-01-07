@@ -20,5 +20,3 @@ def get_gps():
     print(f"Latitude: {report.lat}, Longitude: {report.lon}")
 
     return lat, lon
-
-   		
