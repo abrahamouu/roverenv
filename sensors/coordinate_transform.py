@@ -115,7 +115,7 @@ def bearing_to_point(x1, y1, x2, y2):
 # Test mode
 if __name__ == "__main__":
     # Test coordinate conversion
-    set_reference_point(33.6189, -117.6142)
+    set_reference_point(33.7015, -117.7528)
     
     # Test: 50m North, 30m East
     x, y = 30, 50
