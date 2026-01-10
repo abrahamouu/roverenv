@@ -1,4 +1,5 @@
 import requests
+import time
 
 def get_location():
     try:
@@ -23,4 +24,9 @@ def get_location():
         return None, None
 
 if __name__ == "__main__":
-    get_location()
+    interval = 2
+
+    print("Starting IP location sensor. Press Ctrl+C to stop.")
+    while True:
+        lat, lon = get_location()
+        time.sleep(interval)
