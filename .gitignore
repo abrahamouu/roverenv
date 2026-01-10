@@ -14,4 +14,4 @@ seniordesign/
 lib64
 test_log.csv
 
-
+*.csv

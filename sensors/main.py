@@ -7,10 +7,10 @@ import time
 import config
 from imu import init_imu
 from magnetometer import init_mag
-from gps_manager import init_gps, get_position
+from gpsmanager import init_gps, get_position
 from coordinate_transform import set_reference_point, latlon_to_xy
 from navigation import Navigator
-from data_logger import init_logger, log_data, close_logger, flush
+from datalogger import init_logger, log_data, close_logger, flush
 import motor_helper
 
 class RoverController:
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     rover = RoverController()
     
     # Set a test destination (0m east, 1m North from start)
-    rover.set_destination_xy(0, 1)
+    rover.set_destination_xy(0, 10)
     
     # Run navigation
     rover.run()
