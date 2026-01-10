@@ -182,6 +182,10 @@ if __name__ == "__main__":
     try:
         for i in range(50):  # 5 seconds at 10Hz
             state = nav.update_position()
+
+            if state is None:
+                time.sleep(0.1)
+                continue
             
             if i % 10 == 0:  # Print every second
                 dist = nav.get_distance_to_destination()
