@@ -86,8 +86,10 @@ class RoverController:
             motor_helper.forward(speed)
         elif command == 'turn_left':
             motor_helper.turn_left(speed)
+            time.sleep(0.5)  
         elif command == 'turn_right':
             motor_helper.turn_right(speed)
+            time.sleep(0.5)
         elif command == 'stop':
             motor_helper.stop()
             self.running = False
