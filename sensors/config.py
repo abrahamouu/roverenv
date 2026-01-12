@@ -31,13 +31,15 @@ HEADING_KP = 0.02  # Proportional gain for heading error -> turn rate
 # ========================== SENSOR ADDRESSES ========================== #
 IMU_I2C_ADDRESS = 0x68  # MPU6050 default address
 
-# IP Geolocation API (temporary GPS replacement)
-USE_IP_GEOLOCATION = True  # Set to False when real GPS is added
+# GPS Configuration
+USE_IP_GEOLOCATION = False  # Set to True to use IP geolocation instead of real GPS
+USE_GPSD = True  # Use gpsd daemon for GPS
+
+# IP Geolocation API (fallback when USE_IP_GEOLOCATION = True)
 IP_GEO_API_URL = "http://ip-api.com/json/"
 
-# Real GPS Module (uncomment when available)
-# GPS_SERIAL_PORT = "/dev/serial0"  # Raspberry Pi default
-# GPS_BAUD_RATE = 9600
+# Real GPS Module via gpsd
+# Make sure gpsd is configured in /etc/default/gpsd with your GPS serial port
 
 # ========================== DATA LOGGING ========================== #
 LOG_ENABLED = True
@@ -73,4 +75,4 @@ REF_LON = None
 # ========================== DEBUG FLAGS ========================== #
 DEBUG_PRINT_SENSORS = False  # Print raw sensor values
 DEBUG_PRINT_NAVIGATION = True  # Print navigation calculations
-DEBUG_PRINT_MOTORS = False  # 
+DEBUG_PRINT_MOTORS = False  # Print motor commands
