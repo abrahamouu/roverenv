@@ -19,9 +19,9 @@ def init_gps():
     """Initialize GPS - either IP geo or gpsd based on config."""
     global _gpsd_connected
     
-    if config.USE_IP_GEOLOCATION:
-        print("Using IP Geolocation for position")
-        return True
+    # if config.USE_IP_GEOLOCATION:
+    #     print("Using IP Geolocation for position")
+    #     return True
     
     if config.USE_GPSD:
         try:

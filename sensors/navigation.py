@@ -153,9 +153,9 @@ class Navigator:
         # If heading is way off, turn in place
         if abs(heading_error) > config.HEADING_TOLERANCE:
             if heading_error > 0:
-                return 'turn_right', config.TURN_SPEED
-            else:
                 return 'turn_left', config.TURN_SPEED
+            else:
+                return 'turn_right', config.TURN_SPEED
         
         # Heading is good enough, move forward
         return 'forward', config.BASE_SPEED

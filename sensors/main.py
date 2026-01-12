@@ -13,6 +13,7 @@ from navigation import Navigator
 from datalogger import init_logger, log_data, close_logger, flush
 import motor_helper
 
+
 class RoverController:
     def __init__(self):
         print("Initializing rover systems...")
@@ -30,9 +31,15 @@ class RoverController:
             init_logger()
         
         # Get initial GPS position and set as reference
-        lat, lon = get_position()
-        if lat is None or lon is None:
-            raise RuntimeError("Failed to get initial GPS position")
+        lat, lon = None, None
+        attempts = 0
+        maxattempts = 5
+        while (lat is None or lon is None) and attempts < maxattempts:
+            lat, lon = get_position()
+            if lat is None or lon is None:
+                time.sleep(1)
+                attempts += 1
+                
         
         set_reference_point(lat, lon)
         self.nav.reset_position(0, 0)  # Start at origin
@@ -80,16 +87,15 @@ class RoverController:
         
         # Get navigation command
         command, speed = self.nav.get_navigation_command()
+        time.sleep(1)
         
         # Execute motor command
         if command == 'forward':
             motor_helper.forward(speed)
         elif command == 'turn_left':
             motor_helper.turn_left(speed)
-            time.sleep(0.5)  
         elif command == 'turn_right':
             motor_helper.turn_right(speed)
-            time.sleep(0.5)
         elif command == 'stop':
             motor_helper.stop()
             self.running = False
@@ -159,7 +165,7 @@ if __name__ == "__main__":
     rover = RoverController()
     
     # Set a test destination (0m east, 1m North from start)
-    rover.set_destination_xy(0, 5)
+    rover.set_destination_xy(0, 10)
     
     # Run navigation
     rover.run()
