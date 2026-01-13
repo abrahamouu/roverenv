@@ -83,13 +83,13 @@ class RoverController:
                 return  # First iteration, skip
         else:
             # During turns, just get current state without updating position
-            from heading import get_heading_tilt_compensated
+            from magnetometer import get_heading_basic
             state = {
                 'x': self.nav.x,
                 'y': self.nav.y,
                 'vx': self.nav.vx,
                 'vy': self.nav.vy,
-                'heading': get_heading_tilt_compensated(),
+                'heading': get_heading_basic(),
                 'ax_body': 0, 'ay_body': 0, 'az_body': 0,
                 'ax_earth': 0, 'ay_earth': 0
             }
