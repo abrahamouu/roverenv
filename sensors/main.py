@@ -87,15 +87,22 @@ class RoverController:
         
         # Get navigation command
         command, speed = self.nav.get_navigation_command()
-        time.sleep(1)
+        time.sleep(0.1)
         
         # Execute motor command
         if command == 'forward':
             motor_helper.forward(speed)
+            time.sleep(0.1)
         elif command == 'turn_left':
             motor_helper.turn_left(speed)
+            time.sleep(0.4)
+            motor_helper.stop()
+            time.sleep(0.1)
         elif command == 'turn_right':
             motor_helper.turn_right(speed)
+            time.sleep(0.4)
+            motor_helper.stop()
+            time.sleep(0.1)
         elif command == 'stop':
             motor_helper.stop()
             self.running = False
@@ -103,8 +110,10 @@ class RoverController:
         # Debug print
         if config.DEBUG_PRINT_NAVIGATION:
             dist = self.nav.get_distance_to_destination()
+            heading_err = self.nav.get_heading_error()
             print(f"Pos:({state['x']:.1f},{state['y']:.1f}) "
-                  f"Dist:{dist:.1f}m Cmd:{command}")
+                  f"Heading:{state['x']:.1f} "
+                  f"Dist:{dist:.1f}m HErr: {heading_err:.1f} Cmd:{command}")
         
         # Log data
         if config.LOG_ENABLED:
@@ -165,7 +174,7 @@ if __name__ == "__main__":
     rover = RoverController()
     
     # Set a test destination (0m east, 1m North from start)
-    rover.set_destination_xy(0, 10)
+    rover.set_destination_xy(0, 3)
     
     # Run navigation
     rover.run()

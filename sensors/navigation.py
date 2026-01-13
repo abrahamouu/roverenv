@@ -74,7 +74,7 @@ class Navigator:
         heading = get_heading_tilt_compensated()
         
         # Remove gravity from z-axis and apply calibration offsets
-        az_body -= 9.81
+        az_body -= 9
         ax_body -= config.ACCEL_BIAS_X
         ay_body -= config.ACCEL_BIAS_Y
         

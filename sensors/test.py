@@ -22,11 +22,13 @@ try:
 
     print("testing turn left")
     mh.turn_left(1.0)
-    sleep(4)
+    sleep(2)
+    mh.stop()
+    sleep(2)
     
     print("testing turn right")
     mh.turn_right(1.0)
-    sleep(4)
+    sleep(2)
 
 except KeyboardInterrupt:
     mh.stop()

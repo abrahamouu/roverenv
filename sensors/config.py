@@ -11,7 +11,7 @@ MAG_HEADING_UPDATE = 10  # Hz - How often to update heading from magnetometer
 
 # ========================== NAVIGATION THRESHOLDS ========================== #
 POSITION_EPSILON = 1.5  # meters - "Close enough" to destination
-HEADING_TOLERANCE = 15  # degrees - Acceptable heading error before correcting
+HEADING_TOLERANCE = 20  # degrees - Acceptable heading error before correcting
 MIN_MOVE_DISTANCE = 0.5  # meters - Minimum distance before we start moving
 
 # ========================== DRIFT COMPENSATION ========================== #
@@ -21,8 +21,8 @@ VELOCITY_DECAY_FACTOR = 0.98  # Simulate friction/drag to prevent runaway veloci
 GPS_RESET_THRESHOLD = 5.0  # meters - If IMU drift exceeds this, force GPS resync
 
 # ========================== MOTOR CONTROL ========================== #
-BASE_SPEED = 0.5  # Default motor speed (0.0-1.0)
-TURN_SPEED = 0.3  # Speed when turning
+BASE_SPEED = 0.6  # Default motor speed (0.0-1.0)
+TURN_SPEED = 1.0  # Speed when turning
 MIN_SPEED = 0.2  # Minimum speed to overcome static friction
 
 # Proportional control for heading correction
@@ -54,8 +54,8 @@ MAG_OFFSET_Y = 0.0
 MAG_OFFSET_Z = 0.0
 
 # Accelerometer bias (at rest, should read ~9.81 in z, 0 in x,y)
-ACCEL_BIAS_X = 0.0
-ACCEL_BIAS_Y = 0.0
+ACCEL_BIAS_X = 0.4
+ACCEL_BIAS_Y = 0.05
 ACCEL_BIAS_Z = 0.0
 
 # Gyro bias (at rest, should read 0)
