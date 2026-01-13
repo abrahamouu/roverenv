@@ -73,11 +73,26 @@ class RoverController:
     
     def control_loop(self):
         """Main control loop - call this repeatedly."""
-        # Update navigation state from IMU
-        state = self.nav.update_position()
+        # Get navigation command FIRST
+        command, speed = self.nav.get_navigation_command()
         
-        if state is None:
-            return  # First iteration, skip
+        # Only update position when moving forward (not during turns)
+        if command == 'forward':
+            state = self.nav.update_position()
+            if state is None:
+                return  # First iteration, skip
+        else:
+            # During turns, just get current state without updating position
+            from heading import get_heading_tilt_compensated
+            state = {
+                'x': self.nav.x,
+                'y': self.nav.y,
+                'vx': self.nav.vx,
+                'vy': self.nav.vy,
+                'heading': get_heading_tilt_compensated(),
+                'ax_body': 0, 'ay_body': 0, 'az_body': 0,
+                'ax_earth': 0, 'ay_earth': 0
+            }
         
         # Check if GPS resync needed
         lat, lon = None, None
@@ -85,8 +100,6 @@ class RoverController:
             lat, lon = self.update_from_gps()
             self.last_gps_update = time.time()
         
-        # Get navigation command
-        command, speed = self.nav.get_navigation_command()
         time.sleep(0.1)
         
         # Execute motor command
@@ -112,9 +125,9 @@ class RoverController:
             dist = self.nav.get_distance_to_destination()
             heading_err = self.nav.get_heading_error()
             print(f"Pos:({state['x']:.1f},{state['y']:.1f}) "
-                  f"Heading:{state['heading']:.1f} "
-                  f"Dist:{dist:.1f}m HErr: {heading_err:.1f} Cmd:{command}")
-        
+                f"Heading:{state['heading']:.1f}° "
+                f"Dist:{dist:.1f}m HErr:{heading_err:.1f}° Cmd:{command}")
+            
         # Log data
         if config.LOG_ENABLED:
             log_data(
