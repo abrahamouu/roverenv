@@ -30,7 +30,6 @@ def get_heading_basic():
     heading = math.degrees(math.atan2(-my, mx))
     if heading < 0:
         heading += 360
-    heading += 10
     
 
     return heading

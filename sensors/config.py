@@ -11,7 +11,7 @@ MAG_HEADING_UPDATE = 10  # Hz - How often to update heading from magnetometer
 
 # ========================== NAVIGATION THRESHOLDS ========================== #
 POSITION_EPSILON = 1.5  # meters - "Close enough" to destination
-HEADING_TOLERANCE = 20  # degrees - Acceptable heading error before correcting
+HEADING_TOLERANCE = 30  # degrees - Acceptable heading error before correcting
 MIN_MOVE_DISTANCE = 0.5  # meters - Minimum distance before we start moving
 
 # ========================== DRIFT COMPENSATION ========================== #

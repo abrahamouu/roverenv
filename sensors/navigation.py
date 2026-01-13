@@ -7,6 +7,7 @@ import time
 import config
 from imu import get_accel
 from heading import get_heading_tilt_compensated
+from magnetometer import get_heading_basic
 from coordinate_transform import (
     body_to_earth_frame, 
     angle_difference, 
@@ -71,7 +72,7 @@ class Navigator:
         
         # Read sensors
         ax_body, ay_body, az_body = get_accel()
-        heading = get_heading_tilt_compensated()
+        heading = get_heading_basic()
         
         # Remove gravity from z-axis and apply calibration offsets
         az_body -= 9
@@ -127,7 +128,9 @@ class Navigator:
         if target_bearing is None:
             return 0.0
         
-        current_heading = get_heading_tilt_compensated()
+        current_heading = get_heading_basic()
+        target_angle = angle_difference(target_bearing, current_heading)
+        print(target_angle)
         return angle_difference(target_bearing, current_heading)
     
     def has_reached_destination(self):
@@ -152,7 +155,7 @@ class Navigator:
         
         # If heading is way off, turn in place
         if abs(heading_error) > config.HEADING_TOLERANCE:
-            if heading_error > 0:
+            if heading_error > 170:
                 return 'turn_left', config.TURN_SPEED
             else:
                 return 'turn_right', config.TURN_SPEED

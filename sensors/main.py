@@ -112,7 +112,7 @@ class RoverController:
             dist = self.nav.get_distance_to_destination()
             heading_err = self.nav.get_heading_error()
             print(f"Pos:({state['x']:.1f},{state['y']:.1f}) "
-                  f"Heading:{state['x']:.1f} "
+                  f"Heading:{state['heading']:.1f} "
                   f"Dist:{dist:.1f}m HErr: {heading_err:.1f} Cmd:{command}")
         
         # Log data
@@ -173,8 +173,8 @@ if __name__ == "__main__":
     # Create controller
     rover = RoverController()
     
-    # Set a test destination (0m east, 1m North from start)
-    rover.set_destination_xy(0, 3)
+    # Set a test destination (+- west / east, +- North/South from start)
+    rover.set_destination_xy(0, 5)
     
     # Run navigation
     rover.run()
