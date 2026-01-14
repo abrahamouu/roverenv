@@ -6,7 +6,6 @@ Implements relative positioning between GPS waypoints.
 import time
 import config
 from imu import get_accel
-from heading import get_heading_tilt_compensated
 from magnetometer import get_heading_basic
 from coordinate_transform import (
     body_to_earth_frame, 

@@ -1,3 +1,4 @@
+#File used to test rover movement: Fwd, Bckward, Turn Left, Turn Right, Stop
 from time import sleep
 import gpiozero
 import motor_helper as mh
