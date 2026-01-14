@@ -97,39 +97,30 @@ def backward(speed = 1.0):
     
 # smooth turn, might change based on implementation
 def turn_left(speed = 1.0):
-    # lf_motor("forward", speed * 0.6)
-    # lb_motor("forward", speed * 0.6)
-    # rf_motor("forward", speed)
-    # rb_motor("forward", speed)
-    lf_motor("backward", speed* 0.2)
-    lb_motor("backward", speed* 0.2)
-    rf_motor("forward", speed * 0.2)
-    rb_motor("forward", speed* 0.2)
+    rf_motor("forward", speed* 0.3)
+    rb_motor("forward", speed* 0.3)
+    lf_motor("backward", speed * 0.3)
+    lb_motor("backward", speed * 0.3)
 
 
 def turn_right(speed = 1.0):
-    # lf_motor("forward", speed)
-    # lb_motor("forward", speed)
-    # rf_motor("forward", speed * 0.6)
-    # rb_motor("forward", speed * 0.6)
-    lf_motor("forward", speed * 0.2)
-    lb_motor("forward", speed * 0.2)
-    rf_motor("backward", speed* 0.2)
-    rb_motor("backward", speed* 0.2)
-
-# for more fine-tuned navigation, might not need this
-def steer(speed_left, speed_right):
-    if speed_left > 0:
-        lf_motor("forward", speed_left)
-    elif speed_left < 0:
-        lf_motor("backward", speed_left)
-    else:
-        lf_motor("stop", 0)
-    
-    if speed_right > 0:
-        lb_motor("forward", speed_right)
-    elif speed_right < 0:
-        lb_motor("backward", speed_right)
-    else:
-        lb_motor("stop", 0)
+    lf_motor("forward", speed* 0.3)
+    lb_motor("forward", speed* 0.3)
+    rf_motor("backward", speed * 0.3)
+    rb_motor("backward", speed * 0.3)
+# for more fine-tuned navgation, might not need this
+    def steer(speed_left, speed_right):
+        if speed_left > 0:
+            lf_motor("forward", speed_left)
+        elif speed_left < 0:
+            lf_motor("backward", speed_left)
+        else:
+            lf_motor("stop", 0)
+        
+        if speed_right > 0:
+            lb_motor("forward", speed_right)
+        elif speed_right < 0:
+            lb_motor("backward", speed_right)
+        else:
+            lb_motor("stop", 0)
 
