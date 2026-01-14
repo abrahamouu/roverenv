@@ -106,8 +106,8 @@ def turn_left(speed = 1.0):
 def turn_right(speed = 1.0):
     lf_motor("forward", speed* 0.3)
     lb_motor("forward", speed* 0.3)
-    rf_motor("backward", speed * 0.3)
-    rb_motor("backward", speed * 0.3)
+    rf_motor("backward", speed * 0.4)
+    rb_motor("backward", speed * 0.4)
 # for more fine-tuned navgation, might not need this
     def steer(speed_left, speed_right):
         if speed_left > 0:

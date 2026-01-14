@@ -186,8 +186,8 @@ if __name__ == "__main__":
     # Create controller
     rover = RoverController()
     
-    # Set a test destination (+- west / east, +- North/South from start)
-    rover.set_destination_xy(0, 5)
+    # Set a test destination (+- east / west, +- North/South from start)
+    rover.set_destination_xy(-3, 0)
     
     # Run navigation
     rover.run()
