@@ -1,1 +1,9 @@
 source /home/pi/roverenv/bin/activate
+
+# installation for rpi for backend server
+pip install fastapi
+pip install pydantic
+pip install python-multipart
+pip install fastapi uvicorn
+pip install "fastapi[all]" # maybe don't need quotes
+
