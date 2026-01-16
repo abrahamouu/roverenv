@@ -12,6 +12,8 @@ from coordinate_transform import set_reference_point, latlon_to_xy
 from navigation import Navigator
 from datalogger import init_logger, log_data, close_logger, flush
 import motor_helper
+from control_server import control_state, state_lock
+
 
 
 class RoverController:
@@ -73,6 +75,33 @@ class RoverController:
     
     def control_loop(self):
         """Main control loop - call this repeatedly."""
+        # ---- UI / API CONTROL HOOK ----
+        stop = False
+        new_dest = None
+        base_speed = None
+        turn_speed = None
+
+        with state_lock:
+            stop = control_state.get("stop", False)
+
+            if control_state["updated"]:
+                new_dest = (control_state["dest_x"], control_state["dest_y"])
+                control_state["updated"] = False
+
+            base_speed = control_state["base_speed"]
+            turn_speed = control_state["turn_speed"]
+
+        if stop:
+            motor_helper.stop()
+            self.running = False
+            return
+
+        if new_dest is not None:
+            self.set_destination_xy(*new_dest)
+
+        config.BASE_SPEED = base_speed
+        config.TURN_SPEED = turn_speed
+        
         # Get navigation command FIRST
         command, speed = self.nav.get_navigation_command()
         
