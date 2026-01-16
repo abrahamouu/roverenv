@@ -1,0 +1,15 @@
+Primarily changing the following for RX/TX
+1. Frequency
+2. Bandwidth
+3. Sampling Rate
+4. Gain Mode / Value
+5. Enables I and Q channels (storing phase in both real/imaginary domain)
+Values can be changed in JSON file
+
+On raspberry pi install following:
+sudo apt install libiio-utils libiio-dev
+sudo apt install python3-numpy python3-iio
+
+Can use IIO oscilloscope software to validiate parameters besides test script
+
+Reference: https://analogdevicesinc.github.io/libiio/v0.25/python/index.html

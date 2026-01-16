@@ -1,0 +1,55 @@
+{
+  "connection": {
+    "uri": "ip:192.168.2.1",
+    "comment": "Options: 'ip:192.168.2.1', 'ip:pluto.local', 'usb:'"
+  },
+  
+  "rx": {
+    "frequency": 900000000,
+    "sample_rate": 4000000,
+    "bandwidth": 2000000,
+    "gain_mode": "slow_attack",
+    "gain": 20,
+    "buffer_size": 1024,
+    "comments": {
+      "frequency": "800 MHz to 6 GHz (Hz)",
+      "sample_rate": "2.5 MS/s to 61.44 MS/s (samples/sec)",
+      "bandwidth": "200 kHz to 56 MHz (Hz)",
+      "gain_mode": "Options: manual, slow_attack, fast_attack, hybrid",
+      "gain": "0 to 73 dB (only in manual mode)",
+      "buffer_size": "Typically 256 to 16384 samples"
+    }
+  },
+  
+  "tx": {
+    "frequency": 900000000,
+    "sample_rate": 4000000,
+    "bandwidth": 2000000,
+    "gain": -20,
+    "buffer_size": 1024,
+    "comments": {
+      "frequency": "800 MHz to 6 GHz (Hz)",
+      "sample_rate": "2.5 MS/s to 61.44 MS/s (samples/sec)",
+      "bandwidth": "200 kHz to 56 MHz (Hz)",
+      "gain": "-89.75 to 0 dB (attenuation)",
+      "buffer_size": "Typically 256 to 16384 samples"
+    }
+  },
+  
+  "tone_generator": {
+    "enabled": true,
+    "frequency": 100000,
+    "amplitude": 0.5,
+    "comments": {
+      "frequency": "0 Hz to (sample_rate(tx) / 2) Hz - baseband offset; nyquist rule",
+      "amplitude": "0.0 to 1.0 (keep <= 0.5 to avoid clipping)"
+    }
+  },
+  
+  "operation": {
+    "explore_devices": false,
+    "receive_samples": true,
+    "transmit_tone": true,
+    "verify_parameters": true
+  }
+}
