@@ -7,9 +7,13 @@ Primarily changing the following for RX/TX
 Values can be changed in JSON file
 
 On raspberry pi install following:
-sudo apt install libiio-utils libiio-dev
-sudo apt install python3-numpy python3-iio
+sudo apt install libiio-utils libiio-dev 
+pip install pylibiio
+pip install numpy
 
 Can use IIO oscilloscope software to validiate parameters besides test script
 
 Reference: https://analogdevicesinc.github.io/libiio/v0.25/python/index.html
+
+# launching venv on Pi
+source /home/abraho2/Desktop/roverenv/SDR/venv/bin/activate
