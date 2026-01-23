@@ -7,3 +7,5 @@ pip install python-multipart
 pip install fastapi uvicorn
 pip install "fastapi[all]" # maybe don't need quotes
 
+
+uvicorn control_server:app --host 0.0.0.0 --port 8000

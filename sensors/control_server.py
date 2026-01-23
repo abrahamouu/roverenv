@@ -1,13 +1,12 @@
-# control_server.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import threading
 import config
+import movement_test   # 👈 import test
 
 app = FastAPI()
 
-# Allow frontend to call backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # dev only
@@ -15,7 +14,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Shared control state (read by main loop)
 control_state = {
     "dest_x": 0.0,
     "dest_y": 0.0,
@@ -26,17 +24,14 @@ control_state = {
 
 state_lock = threading.Lock()
 
-
 # ---------- API models ----------
 class XYCommand(BaseModel):
     x: float
     y: float
 
-
 class SpeedCommand(BaseModel):
     base_speed: float
     turn_speed: float
-
 
 # ---------- API endpoints ----------
 @app.post("/command/xy")
@@ -47,7 +42,6 @@ def set_xy(cmd: XYCommand):
         control_state["updated"] = True
     return {"status": "ok"}
 
-
 @app.post("/config/speed")
 def set_speed(cmd: SpeedCommand):
     with state_lock:
@@ -55,8 +49,18 @@ def set_speed(cmd: SpeedCommand):
         control_state["turn_speed"] = cmd.turn_speed
     return {"status": "ok"}
 
-
 @app.get("/state")
 def get_state():
     with state_lock:
         return control_state.copy()
+
+# ---------- NEW: movement test ----------
+@app.post("/test/movement")
+def test_movement():
+    # run in a thread so API doesn’t block
+    threading.Thread(
+        target=movement_test.run_movement_test,
+        daemon=True
+    ).start()
+
+    return {"status": "movement test started"}
