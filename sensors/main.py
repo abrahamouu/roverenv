@@ -1,7 +1,7 @@
 # main_control.py
 """
 Main control loop - ties everything together.
-Coordinates sensors, navigation, motors, and logging.
+Coordinates sensors, navigation, and motors.
 """
 import time
 import config
@@ -10,7 +10,6 @@ from magnetometer import init_mag
 from gpsmanager import init_gps, get_position
 from coordinate_transform import set_reference_point, latlon_to_xy
 from navigation import Navigator
-from datalogger import init_logger, log_data, close_logger, flush
 import motor_helper
 
 
@@ -25,10 +24,6 @@ class RoverController:
         
         # Initialize navigator
         self.nav = Navigator()
-        
-        # Initialize logger
-        if config.LOG_ENABLED:
-            init_logger()
         
         # Get initial GPS position and set as reference
         lat, lon = None, None
@@ -95,9 +90,8 @@ class RoverController:
             }
         
         # Check if GPS resync needed
-        lat, lon = None, None
         if self.nav.should_resync_gps():
-            lat, lon = self.update_from_gps()
+            self.update_from_gps()
             self.last_gps_update = time.time()
         
         time.sleep(0.1)
@@ -127,27 +121,6 @@ class RoverController:
             print(f"Pos:({state['x']:.1f},{state['y']:.1f}) "
                 f"Heading:{state['heading']:.1f}° "
                 f"Dist:{dist:.1f}m HErr:{heading_err:.1f}° Cmd:{command}")
-            
-        # Log data
-        if config.LOG_ENABLED:
-            log_data(
-                lat=lat,
-                lon=lon,
-                x_calc=state['x'],
-                y_calc=state['y'],
-                vx=state['vx'],
-                vy=state['vy'],
-                ax_body=state['ax_body'],
-                ay_body=state['ay_body'],
-                az_body=state['az_body'],
-                ax_earth=state['ax_earth'],
-                ay_earth=state['ay_earth'],
-                heading=state['heading'],
-                target_bearing=self.nav.get_bearing_to_destination(),
-                heading_error=self.nav.get_heading_error(),
-                distance_to_dest=self.nav.get_distance_to_destination(),
-                motor_command=command
-            )
     
     def run(self):
         """Run the control loop until destination reached."""
@@ -174,12 +147,6 @@ class RoverController:
         except KeyboardInterrupt:
             print("\nStopping...")
             motor_helper.stop()
-        
-        finally:
-            # Flush and close logger
-            if config.LOG_ENABLED:
-                flush()
-                close_logger()
 
 # Standalone test/demo
 if __name__ == "__main__":
