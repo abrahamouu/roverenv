@@ -10,9 +10,9 @@ GPS_UPDATE_INTERVAL = 30  # seconds - How often to resync position with GPS
 MAG_HEADING_UPDATE = 10  # Hz - How often to update heading from magnetometer
 
 # ========================== NAVIGATION THRESHOLDS ========================== #
-POSITION_EPSILON = 1.5  # meters - "Close enough" to destination
+POSITION_EPSILON = 2.0  # meters - "Close enough" to destination
 HEADING_TOLERANCE = 20  # degrees - Acceptable heading error before correcting
-MIN_MOVE_DISTANCE = 0.5  # meters - Minimum distance before we start moving
+MIN_MOVE_DISTANCE = 0.9  # meters - Minimum distance before we start moving
 
 # ========================== DRIFT COMPENSATION ========================== #
 # Gains for correcting IMU drift using magnetometer
@@ -37,14 +37,6 @@ USE_GPSD = True  # Use gpsd daemon for GPS
 
 # IP Geolocation API (fallback when USE_IP_GEOLOCATION = True)
 IP_GEO_API_URL = "http://ip-api.com/json/"
-
-# Real GPS Module via gpsd
-# Make sure gpsd is configured in /etc/default/gpsd with your GPS serial port
-
-# ========================== DATA LOGGING ========================== #
-LOG_ENABLED = True
-LOG_FILE = "rover_navigation_log.csv"
-LOG_FREQUENCY = 10  # Hz - How often to write to log file
 
 # ========================== CALIBRATION VALUES ========================== #
 # Magnetometer calibration (hard iron offset)
