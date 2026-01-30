@@ -50,7 +50,11 @@ class PlutoSDR:
     
     def set_tx_sample_rate(self, rate):
         self.phy.find_channel("voltage0", True).attrs["sampling_frequency"].value = str(int(rate))
-    
+
+    def set_sample_rate(self, rate):
+        self.phy.find_channel("voltage0").attrs["sampling_frequency"].value = str(int(rate))
+        self.phy.find_channel("voltage0", True).attrs["sampling_frequency"].value = str(int(rate))
+        
     def set_rx_gain_mode(self, mode):
         self.phy.find_channel("voltage0").attrs["gain_control_mode"].value = mode
     
@@ -102,16 +106,22 @@ class PlutoSDR:
         self.tx_chan_i.enabled = True
         self.tx_chan_q.enabled = True
         self.tx_buf = iio.Buffer(self.tx, buffer_size, cyclic=True)
-    
+        self.buffer_pushed = False
+
     def transmit_samples(self, samples):
+        samples = samples[:len(self.tx_buf)]
+        
         i_data = np.real(samples).astype(np.int16)
         q_data = np.imag(samples).astype(np.int16)
         iq_interleaved = np.empty(len(samples) * 2, dtype=np.int16)
         iq_interleaved[::2] = i_data
         iq_interleaved[1::2] = q_data
         self.tx_buf.write(bytearray(iq_interleaved))
-        self.tx_buf.push()
         
+        if not self.buffer_pushed:
+            self.tx_buf.push()
+            self.buffer_pushed = True
+            
     def close(self):
         del self.ctx
 

@@ -17,3 +17,33 @@ Reference: https://analogdevicesinc.github.io/libiio/v0.25/python/index.html
 
 # launching venv on Pi
 source /home/abraho2/Desktop/roverenv/SDR/venv/bin/activate
+
+# GNU radio installation
+sudo apt update
+sudo apt upgrade -y
+
+sudo apt install -y gnuradio
+
+sudo apt install -y git cmake g++ libboost-all-dev python3-pip
+sudo apt install -y swig liborc-0.4-dev
+
+gnuradio-config-info --version
+
+# install gr-lora
+cd ~
+git clone https://github.com/rpp0/gr-lora.git
+cd gr-lora
+
+mkdir build
+cd build
+cmake ..
+make -j4  # Use all 4 cores on Pi
+sudo make install
+sudo ldconfig
+
+python3 -c "import lora; print('gr-lora installed successfully!')"
+
+# pluto SDR config
+sudo apt install -y libiio-utils libiio-dev
+sudo apt install -y gr-iio
+iio_info -u ip:192.168.2.1
