@@ -5,51 +5,73 @@
   },
   
   "rx": {
-    "frequency": 900000000,
-    "sample_rate": 4000000,
-    "bandwidth": 2000000,
+    "frequency": 915000000,
+    "sample_rate": 1000000,
+    "bandwidth": 1000000,
     "gain_mode": "slow_attack",
-    "gain": 20,
-    "buffer_size": 1024,
+    "gain": 50,
+    "buffer_size": 2048,
     "comments": {
-      "frequency": "800 MHz to 6 GHz (Hz)",
-      "sample_rate": "2.5 MS/s to 61.44 MS/s (samples/sec)",
-      "bandwidth": "200 kHz to 56 MHz (Hz)",
-      "gain_mode": "Options: manual, slow_attack, fast_attack, hybrid",
-      "gain": "0 to 73 dB (only in manual mode)",
-      "buffer_size": "Typically 256 to 16384 samples"
+      "frequency": "915 MHz for LoRa (US ISM band)",
+      "sample_rate": "1 MSPS - must be at least 2x LoRa BW (125 kHz)",
+      "bandwidth": "1 MHz RF bandwidth (wider than LoRa 125 kHz)",
+      "gain_mode": "slow_attack recommended for LoRa",
+      "gain": "50 dB - good starting point for LoRa reception",
+      "buffer_size": "2048 samples for LoRa"
     }
   },
   
   "tx": {
-    "frequency": 900000000,
-    "sample_rate": 4000000,
-    "bandwidth": 2000000,
-    "gain": -20,
-    "buffer_size": 1024,
+    "frequency": 915000000,
+    "sample_rate": 1000000,
+    "bandwidth": 1000000,
+    "gain": -10,
+    "buffer_size": 2048,
     "comments": {
-      "frequency": "800 MHz to 6 GHz (Hz)",
-      "sample_rate": "2.5 MS/s to 61.44 MS/s (samples/sec)",
-      "bandwidth": "200 kHz to 56 MHz (Hz)",
-      "gain": "-89.75 to 0 dB (attenuation)",
-      "buffer_size": "Typically 256 to 16384 samples"
+      "frequency": "915 MHz for LoRa (US ISM band)",
+      "sample_rate": "1 MSPS - must match RX sample rate",
+      "bandwidth": "1 MHz RF bandwidth",
+      "gain": "-10 dB attenuation - adjust for range vs power",
+      "buffer_size": "2048 samples for LoRa"
+    }
+  },
+  
+  "lora": {
+    "bandwidth": 125000,
+    "spreading_factor": 7,
+    "coding_rate": 5,
+    "preamble_length": 8,
+    "sync_word": 18,
+    "crc_enabled": true,
+    "implicit_header": false,
+    "comments": {
+      "bandwidth": "125 kHz LoRa bandwidth (options: 125000, 250000, 500000)",
+      "spreading_factor": "SF7 (range 7-12, lower=faster, higher=longer range)",
+      "coding_rate": "4/5 (options: 5=4/5, 6=4/6, 7=4/7, 8=4/8)",
+      "preamble_length": "8 symbols (typical 6-12)",
+      "sync_word": "0x12 in decimal (18) = public LoRa network",
+      "crc_enabled": "Enable CRC for error detection",
+      "implicit_header": "false = explicit header mode (includes payload length)"
     }
   },
   
   "tone_generator": {
-    "enabled": true,
+    "enabled": false,
     "frequency": 100000,
     "amplitude": 0.5,
     "comments": {
-      "frequency": "0 Hz to (sample_rate(tx) / 2) Hz - baseband offset; nyquist rule",
-      "amplitude": "0.0 to 1.0 (keep <= 0.5 to avoid clipping)"
+      "enabled": "Disabled for LoRa operation - use LoRa modulation instead"
     }
   },
   
   "operation": {
     "explore_devices": false,
-    "receive_samples": true,
-    "transmit_tone": true,
-    "verify_parameters": true
+    "receive_samples": false,
+    "transmit_tone": false,
+    "verify_parameters": true,
+    "lora_mode": true,
+    "comments": {
+      "lora_mode": "Enable LoRa communication via GNU Radio"
+    }
   }
 }
