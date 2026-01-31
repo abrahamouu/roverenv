@@ -23,7 +23,7 @@ import json
 import pmt
 
 class LoRaTransmitter(gr.top_block):
-    def __init__(self, config_file="config_lora.json"):
+    def __init__(self, config_file="config.json"):
         gr.top_block.__init__(self, "LoRa Transmitter via Pluto SDR")
         
         # Load configuration
@@ -95,9 +95,9 @@ def main():
     print("Initializing LoRa Transmitter...")
     
     try:
-        tb = LoRaTransmitter(config_file="config_lora.json")
+        tb = LoRaTransmitter(config_file="config.json")
     except FileNotFoundError:
-        print("\nERROR: config_lora.json not found!")
+        print("\nERROR: config.json not found!")
         print("Please make sure the configuration file exists.")
         return
     except Exception as e:
