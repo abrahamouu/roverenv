@@ -4,6 +4,9 @@ from pydantic import BaseModel
 import threading
 import config
 import movement_test   # 👈 import test
+from interrupt import STOP_EVENT
+import motor_helper as mh
+
 
 app = FastAPI()
 
@@ -54,13 +57,22 @@ def get_state():
     with state_lock:
         return control_state.copy()
 
-# ---------- NEW: movement test ----------
 @app.post("/test/movement")
 def test_movement():
-    # run in a thread so API doesn’t block
+    STOP_EVENT.clear()
+
     threading.Thread(
         target=movement_test.run_movement_test,
         daemon=True
     ).start()
 
     return {"status": "movement test started"}
+
+
+# -- FORCE STOP 
+@app.post("/stop")
+def force_stop():
+    STOP_EVENT.set()
+    mh.stop()
+    return {"status": "INTERRUPT: STOP"}
+
