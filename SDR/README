@@ -1,0 +1,49 @@
+Primarily changing the following for RX/TX
+1. Frequency
+2. Bandwidth
+3. Sampling Rate
+4. Gain Mode / Value
+5. Enables I and Q channels (storing phase in both real/imaginary domain)
+Values can be changed in JSON file
+
+On raspberry pi install following:
+sudo apt install libiio-utils libiio-dev 
+pip install pylibiio
+pip install numpy
+
+Can use IIO oscilloscope software to validiate parameters besides test script
+
+Reference: https://analogdevicesinc.github.io/libiio/v0.25/python/index.html
+
+# launching venv on Pi
+source /home/abraho2/Desktop/roverenv/SDR/venv/bin/activate
+
+# GNU radio installation
+sudo apt update
+sudo apt upgrade -y
+
+sudo apt install -y gnuradio
+
+sudo apt install -y git cmake g++ libboost-all-dev python3-pip
+sudo apt install -y swig liborc-0.4-dev
+
+gnuradio-config-info --version
+
+# install gr-lora
+cd ~
+git clone https://github.com/rpp0/gr-lora.git
+cd gr-lora
+
+mkdir build
+cd build
+cmake ..
+make -j4  # Use all 4 cores on Pi
+sudo make install
+sudo ldconfig
+
+python3 -c "import lora; print('gr-lora installed successfully!')"
+
+# pluto SDR config
+sudo apt install -y libiio-utils libiio-dev
+sudo apt install -y gr-iio
+iio_info -u ip:192.168.2.1

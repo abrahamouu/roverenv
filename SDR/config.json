@@ -1,0 +1,77 @@
+{
+  "connection": {
+    "uri": "ip:192.168.2.1",
+    "comment": "Options: 'ip:192.168.2.1', 'ip:pluto.local', 'usb:'"
+  },
+  
+  "rx": {
+    "frequency": 915000000,
+    "sample_rate": 1000000,
+    "bandwidth": 1000000,
+    "gain_mode": "slow_attack",
+    "gain": 50,
+    "buffer_size": 2048,
+    "comments": {
+      "frequency": "915 MHz for LoRa (US ISM band)",
+      "sample_rate": "1 MSPS - must be at least 2x LoRa BW (125 kHz)",
+      "bandwidth": "1 MHz RF bandwidth (wider than LoRa 125 kHz)",
+      "gain_mode": "slow_attack recommended for LoRa",
+      "gain": "50 dB - good starting point for LoRa reception",
+      "buffer_size": "2048 samples for LoRa"
+    }
+  },
+  
+  "tx": {
+    "frequency": 915000000,
+    "sample_rate": 1000000,
+    "bandwidth": 1000000,
+    "gain": -10,
+    "buffer_size": 2048,
+    "comments": {
+      "frequency": "915 MHz for LoRa (US ISM band)",
+      "sample_rate": "1 MSPS - must match RX sample rate",
+      "bandwidth": "1 MHz RF bandwidth",
+      "gain": "-10 dB attenuation - adjust for range vs power",
+      "buffer_size": "2048 samples for LoRa"
+    }
+  },
+  
+  "lora": {
+    "bandwidth": 125000,
+    "spreading_factor": 7,
+    "coding_rate": 5,
+    "preamble_length": 8,
+    "sync_word": 18,
+    "crc_enabled": true,
+    "implicit_header": false,
+    "comments": {
+      "bandwidth": "125 kHz LoRa bandwidth (options: 125000, 250000, 500000)",
+      "spreading_factor": "SF7 (range 7-12, lower=faster, higher=longer range)",
+      "coding_rate": "4/5 (options: 5=4/5, 6=4/6, 7=4/7, 8=4/8)",
+      "preamble_length": "8 symbols (typical 6-12)",
+      "sync_word": "0x12 in decimal (18) = public LoRa network",
+      "crc_enabled": "Enable CRC for error detection",
+      "implicit_header": "false = explicit header mode (includes payload length)"
+    }
+  },
+  
+  "tone_generator": {
+    "enabled": false,
+    "frequency": 100000,
+    "amplitude": 0.5,
+    "comments": {
+      "enabled": "Disabled for LoRa operation - use LoRa modulation instead"
+    }
+  },
+  
+  "operation": {
+    "explore_devices": false,
+    "receive_samples": false,
+    "transmit_tone": false,
+    "verify_parameters": true,
+    "lora_mode": true,
+    "comments": {
+      "lora_mode": "Enable LoRa communication via GNU Radio"
+    }
+  }
+}
