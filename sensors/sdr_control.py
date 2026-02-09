@@ -96,9 +96,15 @@ class PlutoSDR:
     
     def receive_samples(self):
         self.rx_buf.refill()
-        i_data = np.frombuffer(self.rx_buf.read(), dtype=np.int16)[::2]
-        q_data = np.frombuffer(self.rx_buf.read(), dtype=np.int16)[1::2]
-        return i_data + 1j * q_data
+
+        raw = self.rx_buf.read()                       
+        data = np.frombuffer(raw, dtype=np.int16)     
+        # interleaved IQ data
+        i_data = data[::2]
+        q_data = data[1::2]
+
+        return i_data.astype(np.float32) + 1j * q_data.astype(np.float32)
+
         
     def setup_tx_buffer(self, buffer_size=1024):
         self.tx_chan_i = self.tx.find_channel("voltage0", True)
