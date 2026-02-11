@@ -8,7 +8,8 @@ sdr.set_sample_rate(4_000_000)
 sdr.set_tx_bandwidth(1_000_000)
 sdr.set_tx_gain(-10)
 
-print("Transmitting…")
-transmit_string(sdr, "HELLO SDR")
+transmit_string(sdr, "HELLO")
+
+input("Press Enter to stop...")
 
 sdr.close()

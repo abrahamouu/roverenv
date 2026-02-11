@@ -13,7 +13,7 @@
     "frequency": 915000000,
     "sample_rate": 4000000,
     "bandwidth": 2000000,
-    "gain_mode": "slow_attack",
+    "gain_mode": "manual",
     "gain": 40,
     "buffer_size": 131072
   },
