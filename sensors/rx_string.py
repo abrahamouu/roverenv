@@ -1,7 +1,7 @@
 import numpy as np
 
 PREAMBLE = "1010101010101010"
-SAMPLES_PER_BIT = 10
+SAMPLES_PER_BIT = 100
 
 def bpsk_demodulate(samples):
     # Downsample by taking center sample of each bit

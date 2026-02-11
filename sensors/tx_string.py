@@ -7,7 +7,7 @@ def string_to_bits(s: str):
     framed = PREAMBLE + data_bits
     return np.array([int(b) for b in framed], dtype=np.uint8)
 
-def bits_to_bpsk(bits, amplitude=12000, samples_per_bit=10):
+def bits_to_bpsk(bits, amplitude=12000, samples_per_bit=100):
     symbols = amplitude * (2 * bits - 1)
     return np.repeat(symbols, samples_per_bit).astype(np.complex64)
 
@@ -18,4 +18,5 @@ def transmit_string(sdr, message: str):
     sdr.setup_tx_buffer(len(samples))
     sdr.transmit_samples(samples)
 
-    print("Transmitted:", message)
+    print("Transmitting continuously...")
+

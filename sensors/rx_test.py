@@ -9,7 +9,7 @@ sdr.set_rx_bandwidth(1_000_000)
 sdr.set_rx_gain_mode("manual")
 sdr.set_rx_gain(60)
 
-sdr.setup_rx_buffer(10000)
+sdr.setup_rx_buffer(50000)
 
 samples = sdr.receive_samples()
 
