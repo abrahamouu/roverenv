@@ -106,8 +106,8 @@ def main():
                     best_match = matches
                     best_start = start
                 
-                # If we get a really good match (>90%), likely found it
-                if matches >= int(pattern_len * 0.9):
+                # If we get a good match (>85%), likely found it
+                if matches >= int(pattern_len * 0.85):
                     # Try to decode the full JSON (assume ~80 chars max)
                     message_bits = bits[start:start+640]  # 80 chars * 8 bits
                     message = bits_to_string(message_bits)
@@ -116,36 +116,40 @@ def main():
                     if '}' in message:
                         json_str = message[:message.index('}')+1]
                         
-                        if json_str != last_message:
-                            last_message = json_str
+                        try:
+                            # Parse JSON
+                            data = json.loads(json_str)
                             
+                            # Display nicely
+                            timestamp = datetime.fromtimestamp(data['t']).strftime('%Y-%m-%d %H:%M:%S')
+                            
+                            print("\n" + "=" * 50)
+                            print(f"   GPS UPDATE - {timestamp}")
+                            print(f"   Latitude:  {data['lat']:.6f}°")
+                            print(f"   Longitude: {data['lon']:.6f}°")
+                            if 'alt' in data:
+                                print(f"   Altitude:  {data['alt']:.1f} m")
+                            print(f"   Match quality: {matches}/{pattern_len} bits ({100*matches/pattern_len:.1f}%)")
+                            print("=" * 50)
+                            print("\nGPS coordinates received successfully!")
                             try:
-                                # Parse JSON
-                                data = json.loads(json_str)
-                                
-                                # Display nicely
-                                timestamp = datetime.fromtimestamp(data['t']).strftime('%Y-%m-%d %H:%M:%S')
-                                
-                                print("\n" + "=" * 50)
-                                print(f"📍 GPS UPDATE - {timestamp}")
-                                print(f"   Latitude:  {data['lat']:.6f}°")
-                                print(f"   Longitude: {data['lon']:.6f}°")
-                                if 'alt' in data:
-                                    print(f"   Altitude:  {data['alt']:.1f} m")
-                                print(f"   Match quality: {matches}/{pattern_len} bits ({100*matches/pattern_len:.1f}%)")
-                                print("=" * 50)
-                                print()
-                                break
-                                
-                            except (json.JSONDecodeError, KeyError) as e:
-                                print(f"Parse error: {e}")
+                                sdr.close()
+                            except:
+                                pass
+                            return
+                            
+                        except (json.JSONDecodeError, KeyError) as e:
+                            print(f"Parse error: {e}")
             else:
                 print(f"No GPS found (best match: {best_match}/{pattern_len} = {100*best_match/pattern_len:.1f}%)")
             
     except KeyboardInterrupt:
         print("\nStopping receiver...")
     finally:
-        sdr.close()
+        try:
+            sdr.close()
+        except:
+            pass
 
 if __name__ == "__main__":
     main()
