@@ -29,22 +29,33 @@ def raised_cosine_filter(beta=0.35, span=10, sps=40):
 
 def bpsk_demodulate(iq_samples, sps=40):
     """
-    Convert IQ samples to bits with matched filtering
+    Convert IQ samples to bits with matched filtering and timing recovery
     """
     # apply matched filter
     rrc = raised_cosine_filter(beta=0.35, span=10, sps=sps)
     filtered = np.convolve(iq_samples, rrc, mode='same')
     
-    # downsample to symbol rate
-    symbols = filtered[::sps].real
+    # Simple timing recovery: find best sampling phase by maximizing signal energy
+    best_phase = 0
+    max_energy = 0
+    
+    for phase in range(sps):
+        samples = filtered[phase::sps].real
+        energy = np.sum(samples**2)
+        if energy > max_energy:
+            max_energy = energy
+            best_phase = phase
+    
+    # downsample at best phase
+    symbols = filtered[best_phase::sps].real
     
     # decision
     bits = (symbols > 0).astype(int)
-    return bits
+    return bits, best_phase
 
-def find_preamble_correlation(bits, threshold=0.7):
+def find_preamble_correlation(bits, threshold=0.5):
     """
-    Find preamble using correlation (more robust than exact match)
+    Find preamble using correlation - detects polarity inversion
     """
     barker13 = np.array([1,1,1,1,1,0,0,1,1,0,1,0,1])
     preamble = np.tile(barker13, 10)  # 130 bits
@@ -57,13 +68,21 @@ def find_preamble_correlation(bits, threshold=0.7):
     corr = np.correlate(bits_bipolar, preamble_bipolar, mode='valid')
     corr_norm = corr / len(preamble)
     
-    # find peak above threshold
-    peaks = np.where(corr_norm > threshold * np.max(corr_norm))[0]
+    # find peak (positive or negative) above threshold
+    max_corr = np.max(np.abs(corr_norm))
+    peaks = np.where(np.abs(corr_norm) > threshold * max_corr)[0]
     
     if len(peaks) > 0:
-        idx = peaks[0] + len(preamble)  # end of preamble
-        return idx
-    return None
+        best_peak = peaks[np.argmax(np.abs(corr_norm[peaks]))]
+        idx = best_peak + len(preamble)  # end of preamble
+        
+        # Check if we need to invert (negative correlation)
+        inverted = corr_norm[best_peak] < 0
+        
+        print(f"Preamble at {idx}, corr: {corr_norm[best_peak]:.2f}, inverted: {inverted}")
+        return idx, inverted
+    
+    return None, False
 
 def majority_decode(bits_repeated, rep_factor=3):
     """
@@ -82,26 +101,39 @@ def decode_packet(bits):
     """
     Extract packet after preamble with error correction
     """
-    idx = find_preamble_correlation(bits, threshold=0.7)
-    if idx is None:
+    result = find_preamble_correlation(bits, threshold=0.5)
+    if result[0] is None:
         return None
+    
+    idx, inverted = result
+    
+    # If signal is inverted, flip all bits
+    if inverted:
+        bits = 1 - bits
+        print("Signal inverted - flipping bits")
     
     # sanity check: enough bits for length header?
     if idx + 16 > len(bits):
+        print(f"Not enough bits for header. Have {len(bits)}, need {idx+16}")
         return None
         
     # get length header (16 bits)
     length_bits = bits[idx:idx+16]
+    print(f"Length header bits: {length_bits[:16]}")
     length_bytes = np.packbits(length_bits).tobytes()
     packet_len = int.from_bytes(length_bytes, "little")
     
+    print(f"Decoded length: {packet_len} bytes")
+    
     # sanity check packet length
     if packet_len > 1024 or packet_len == 0:
+        print(f"Invalid packet length: {packet_len}")
         return None
     
     # extract repeated payload bits (3x repetition)
     payload_bits_repeated_len = packet_len * 8 * 3
     if idx + 16 + payload_bits_repeated_len > len(bits):
+        print(f"Not enough bits for payload. Have {len(bits)}, need {idx+16+payload_bits_repeated_len}")
         return None
         
     payload_bits_repeated = bits[idx+16: idx+16 + payload_bits_repeated_len]
@@ -110,6 +142,8 @@ def decode_packet(bits):
     payload_bits = majority_decode(payload_bits_repeated, rep_factor=3)
     
     payload_bytes = bits_to_bytes(payload_bits)
+    
+    print(f"Decoded bytes (hex): {payload_bytes.hex()[:60]}...")
 
     try:
         return json.loads(payload_bytes.decode("utf-8"))
@@ -135,16 +169,22 @@ def main():
     # setup buffer
     buf_size = config["rx"]["buffer_size"]
     sdr.setup_rx_buffer(buf_size)
+    
+    # Calculate actual samples per symbol based on sample rate
+    # TX uses: symbol_rate = sample_rate / sps = 4MHz / 40 = 100k symbols/sec
+    symbol_rate = 100000  # 100 kHz symbol rate (from TX)
+    actual_sps = int(config["rx"]["sample_rate"] / symbol_rate)
+    print(f"Using {actual_sps} samples per symbol (sample rate: {config['rx']['sample_rate']} Hz)")
 
     print("Waiting for packets...")
 
     try:
         while True:
             iq = sdr.receive_samples()
-            bits = bpsk_demodulate(iq, sps=40)
+            bits, phase = bpsk_demodulate(iq, sps=actual_sps)
             packet = decode_packet(bits)
             if packet:
-                print("Received packet:", packet)
+                print(f"✓ Received packet (phase={phase}):", packet)
 
     except KeyboardInterrupt:
         print("Stopping RX...")

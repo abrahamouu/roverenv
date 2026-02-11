@@ -80,7 +80,7 @@ def main():
     sdr.set_tx_bandwidth(config["tx"]["bandwidth"])
     sdr.set_tx_gain(config["tx"]["gain"])
 
-    # build message
+    # build message ONCE (reuse same packet for testing)
     msg = build_payload()
     print("TX message:", msg)
 
@@ -97,12 +97,18 @@ def main():
     # setup buffer large enough
     sdr.setup_tx_buffer(len(iq))
 
-    sdr.transmit_samples(iq)
-
-    print("Transmission pushed")
-
-    time.sleep(1)
-    sdr.close()
+    print("Starting continuous transmission (Ctrl+C to stop)...")
+    
+    try:
+        while True:
+            sdr.transmit_samples(iq)
+            print(".", end="", flush=True)  # show it's transmitting
+            time.sleep(0.5)  # small delay between transmissions
+            
+    except KeyboardInterrupt:
+        print("\nStopping transmitter...")
+    finally:
+        sdr.close()
 
 if __name__ == "__main__":
     main()
