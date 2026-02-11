@@ -8,6 +8,7 @@ from interrupt import STOP_EVENT
 import motor_helper as mh
 from sdr_control import PlutoSDR
 from fastapi import HTTPException
+import txGPS
 
 
 
@@ -175,3 +176,29 @@ def disconnect_sdr(rover_id: str):
             del sdr_instances[rover_id]
 
     return {"status": "disconnected"}
+
+
+import txGPS
+
+@app.post("/sdr/txgps")
+def trigger_tx_gps():
+    try:
+        # Directly create SDR and transmit
+        sdr = PlutoSDR(uri="ip:192.168.2.1")
+
+        # If needed, set TX params here (optional)
+        # sdr.set_tx_frequency(...)
+        # sdr.set_tx_sample_rate(...)
+        # sdr.set_tx_bandwidth(...)
+        # sdr.set_tx_gain(...)
+
+        txGPS.transmit_once(sdr)
+
+        sdr.close()
+
+        return {"status": "GPS transmission sent"}
+
+    except Exception as e:
+        print("TX ERROR:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
