@@ -61,6 +61,13 @@ def main():
     print("Bit 0 = 50 kHz, Bit 1 = 150 kHz")
     print("Press Ctrl+C to stop\n")
     
+    # Setup buffer once with max size we'll need
+    # GPS JSON is ~80 chars = 640 bits + 64 preamble = 704 bits
+    # x3 repeats = 2112 bits x 100 sps = 211,200 samples
+    max_samples = 220000
+    sdr.setup_tx_buffer(max_samples)
+    print(f"Buffer size: {max_samples} samples\n")
+    
     try:
         while True:
             # Get fresh GPS data
@@ -78,10 +85,12 @@ def main():
             
             iq = fsk_modulate(all_bits, sps=100, sample_rate=config["tx"]["sample_rate"])
             
-            print(f"Total samples: {len(iq)}")
+            # Pad to buffer size
+            if len(iq) < max_samples:
+                padding = np.zeros(max_samples - len(iq), dtype=np.complex64)
+                iq = np.concatenate([iq, padding])
             
-            # Key: setup buffer to exact size each time (like BPSK does)
-            sdr.setup_tx_buffer(len(iq))
+            print(f"Total samples: {len(iq)}")
             
             # Transmit
             sdr.transmit_samples(iq)
