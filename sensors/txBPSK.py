@@ -89,7 +89,7 @@ def main():
     iq = bpsk_modulate(
         bits,
         sps=40,
-        amplitude=0.6
+        amplitude=0.9  # increased from 0.6 to 0.9 for stronger signal
     )
 
     print("TX samples:", len(iq))
