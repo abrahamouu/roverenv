@@ -1,41 +1,50 @@
 import numpy as np
 from sdr_control import PlutoSDR, load_config
 
-def simple_bpsk_demodulate(iq_samples, sps=40):
-    """Simple BPSK demod: try all phases and pick the best"""
-    best_bits = None
-    best_energy = 0
+def fsk_demodulate(iq_samples, sps=100, sample_rate=4000000):
+    """
+    FSK demod: measure frequency of each bit period
+    50 kHz = bit 0, 150 kHz = bit 1
+    """
+    num_bits = len(iq_samples) // sps
+    bits = []
     
-    # Try different sampling offsets (phases)
-    for phase in range(sps):
-        symbols = iq_samples[phase::sps].real
-        energy = np.sum(symbols**2)
+    for i in range(num_bits):
+        segment = iq_samples[i*sps:(i+1)*sps]
         
-        if energy > best_energy:
-            best_energy = energy
-            best_bits = (symbols > 0).astype(np.uint8)
+        # Compute FFT to find dominant frequency
+        fft = np.fft.fft(segment)
+        freqs = np.fft.fftfreq(len(segment), 1/sample_rate)
+        
+        # Look at positive frequencies only
+        pos_freqs = freqs[:len(freqs)//2]
+        pos_fft = np.abs(fft[:len(fft)//2])
+        
+        # Find peak frequency
+        peak_idx = np.argmax(pos_fft)
+        peak_freq = abs(pos_freqs[peak_idx])
+        
+        # Decide: closer to 50kHz or 150kHz?
+        if abs(peak_freq - 50000) < abs(peak_freq - 150000):
+            bits.append(0)
+        else:
+            bits.append(1)
     
-    return best_bits
+    return np.array(bits, dtype=np.uint8)
 
 def find_preamble_simple(bits):
-    """Find alternating 10101010... pattern - very lenient"""
-    
-    # Look for at least 40 bits of mostly alternating pattern
+    """Find alternating pattern"""
     for start_pos in range(min(200, len(bits) - 64)):
-        # Count transitions (bit changes) in next 64 bits
         segment = bits[start_pos:start_pos+64]
         transitions = np.sum(segment[:-1] != segment[1:])
         
-        # Alternating pattern should have ~63 transitions in 64 bits
-        # Accept if at least 50 transitions (about 80%)
         if transitions >= 50:
-            print(f"Found alternating pattern at {start_pos}, transitions: {transitions}/63")
-            return start_pos + 64  # Return position after preamble
+            return start_pos + 64
     
     return None
 
 def bits_to_string(bits):
-    """Convert bits back to string"""
+    """Convert bits to string"""
     chars = []
     for i in range(0, len(bits), 8):
         if i + 8 > len(bits):
@@ -45,7 +54,6 @@ def bits_to_string(bits):
         for j, bit in enumerate(byte_bits):
             byte_val |= (bit << (7-j))
         
-        # Only add printable ASCII
         if 32 <= byte_val <= 126:
             chars.append(chr(byte_val))
     
@@ -63,48 +71,34 @@ def main():
 
     sdr.setup_rx_buffer(131072)
     
-    print("Listening for messages...")
-    print("(Looking for 'HELLO')")
+    print("Listening for FSK messages...")
+    print("Bit 0 = 50 kHz, Bit 1 = 150 kHz")
     
     try:
         while True:
-            # Receive samples
             iq = sdr.receive_samples()
             
-            print(f"Received {len(iq)} samples, max power: {np.max(np.abs(iq)):.1f}")
+            # Demodulate
+            bits = fsk_demodulate(iq, sps=100, sample_rate=config["rx"]["sample_rate"])
             
-            # Demodulate to bits
-            bits = simple_bpsk_demodulate(iq, sps=40)
-            
-            print(f"Demodulated to {len(bits)} bits")
-            print(f"First 100 bits: {''.join(str(b) for b in bits[:100])}")
+            print(f"Demodulated {len(bits)} bits")
+            print(f"First 64 bits: {''.join(str(b) for b in bits[:64])}")
             
             # Find preamble
             data_start = find_preamble_simple(bits)
             
-            if data_start is not None:
-                print(f"Found preamble at bit {data_start}")
+            if data_start is not None and data_start + 40 <= len(bits):
+                data_bits = bits[data_start:data_start+40]
                 
-                # Skip a few extra bits as guard interval to avoid preamble remnants
-                data_start += 8  # Skip 8 more bits to be safe
+                print(f"Data bits: {''.join(str(b) for b in data_bits)}")
                 
-                # Extract exactly 40 bits for "HELLO"
-                if data_start + 40 <= len(bits):
-                    data_bits = bits[data_start:data_start+40]
+                message = bits_to_string(data_bits)
+                
+                if message:
+                    print(f"✓ Received: '{message}'")
                     
-                    print(f"Data bits: {''.join(str(b) for b in data_bits)}")
-                    
-                    # Convert to string
-                    message = bits_to_string(data_bits)
-                    
-                    if message and len(message) >= 3:  # Should get at least 3 chars
-                        print(f"✓ Received: '{message}'")
-                        
-                        # Check if it's actually HELLO
-                        if 'HELLO' in message or 'HELL' in message or 'ELLO' in message:
-                            print(f"*** SUCCESS! Got HELLO! ***")
-            else:
-                print("No preamble found")
+                    if 'HELLO' in message:
+                        print("*** SUCCESS! ***")
             
             print("---")
             

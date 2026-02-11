@@ -11,13 +11,25 @@ def string_to_bits(text):
             bits.append((byte >> (7-i)) & 1)
     return np.array(bits, dtype=np.uint8)
 
-def simple_bpsk_modulate(bits, sps=40):
-    """Simple BPSK: 0->-1, 1->+1, then upsample"""
-    symbols = 2*bits - 1  # Convert to -1, +1
-    upsampled = np.repeat(symbols, sps)  # Repeat each symbol sps times
+def fsk_modulate(bits, sps=100, sample_rate=4000000):
+    """
+    FSK: bit 0 = 50kHz tone, bit 1 = 150kHz tone
+    Much more robust than BPSK!
+    """
+    freq_0 = 50000   # 50 kHz for bit 0
+    freq_1 = 150000  # 150 kHz for bit 1
     
-    iq = upsampled.astype(np.complex64)
-    iq *= 0.8 * (2**14)  # Scale for Pluto
+    samples_per_bit = sps
+    t_bit = np.arange(samples_per_bit) / sample_rate
+    
+    signal = []
+    for bit in bits:
+        freq = freq_1 if bit == 1 else freq_0
+        tone = np.exp(2j * np.pi * freq * t_bit)
+        signal.extend(tone)
+    
+    iq = np.array(signal, dtype=np.complex64)
+    iq *= 0.8 * (2**14)
     
     return iq
 
@@ -30,35 +42,26 @@ def main():
     sdr.set_tx_bandwidth(config["tx"]["bandwidth"])
     sdr.set_tx_gain(0)
 
-    # Message to send
     message = "HELLO"
     
-    # Add preamble for sync (alternating 1010...)
-    preamble_bits = np.tile([1, 0], 32)  # 64 bits of alternating
-    
-    # Convert message to bits
+    # Preamble: alternating bits
+    preamble_bits = np.tile([1, 0], 32)  # 64 bits
     data_bits = string_to_bits(message)
     
-    print(f"Message '{message}' in bits:")
-    for i, char in enumerate(message):
-        char_bits = data_bits[i*8:(i+1)*8]
-        print(f"  {char} = {''.join(str(b) for b in char_bits)}")
+    print(f"Transmitting '{message}' using FSK")
+    print(f"Bit 0 = 50 kHz, Bit 1 = 150 kHz")
     
-    # Combine: preamble + data, then REPEAT 5 times so we always catch one
+    # Send multiple copies
     packet = np.concatenate([preamble_bits, data_bits])
-    all_bits = np.tile(packet, 5)  # Send 5 copies back-to-back
+    all_bits = np.tile(packet, 3)
     
-    # Modulate
-    iq = simple_bpsk_modulate(all_bits, sps=40)
+    iq = fsk_modulate(all_bits, sps=100, sample_rate=config["tx"]["sample_rate"])
     
-    print(f"Transmitting: '{message}' (5 copies)")
-    print(f"Single packet: {len(packet)} bits (preamble: {len(preamble_bits)}, data: {len(data_bits)})")
-    print(f"Total bits: {len(all_bits)}")
     print(f"Total samples: {len(iq)}")
     
     sdr.setup_tx_buffer(len(iq))
     
-    print("Sending continuously (Ctrl+C to stop)...")
+    print("Sending continuously...")
     
     try:
         while True:
