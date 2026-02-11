@@ -75,20 +75,21 @@ def decode_packet(bits):
     length_bits = bits[data_start:data_start+16]
     length = 0
     for i, bit in enumerate(length_bits):
-        length |= (bit << (15-i))
+        length |= (int(bit) << (15-i))
     
-    # Sanity check
+    # Sanity check - prevent overflow
     if length > 500 or length == 0:
         return None
     
-    # Extract data
+    # Calculate end position safely
     data_bit_start = data_start + 16
-    data_bit_end = data_bit_start + (length * 8)
+    data_bits_needed = length * 8
     
-    if data_bit_end > len(bits):
+    # Check we have enough bits
+    if data_bit_start + data_bits_needed > len(bits):
         return None
     
-    data_bits = bits[data_bit_start:data_bit_end]
+    data_bits = bits[data_bit_start:data_bit_start + data_bits_needed]
     data_bytes = bits_to_bytes(data_bits)
     
     try:

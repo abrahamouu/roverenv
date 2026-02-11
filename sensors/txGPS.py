@@ -80,6 +80,16 @@ def main():
     print("Transmitting GPS coordinates every 2 seconds")
     print("Press Ctrl+C to stop\n")
     
+    # Pre-calculate max buffer size needed
+    max_message = get_gps_data()
+    max_packet = build_packet(max_message)
+    max_bits = np.tile(max_packet, 3)
+    max_iq = fsk_modulate(max_bits, sps=100, sample_rate=config["tx"]["sample_rate"])
+    
+    # Setup buffer once
+    sdr.setup_tx_buffer(len(max_iq))
+    print(f"Buffer size: {len(max_iq)} samples\n")
+    
     try:
         while True:
             # Get fresh GPS data
@@ -96,11 +106,10 @@ def main():
             # Modulate
             iq = fsk_modulate(all_bits, sps=100, sample_rate=config["tx"]["sample_rate"])
             
-            # Transmit
-            sdr.setup_tx_buffer(len(iq))
+            # Transmit (buffer already setup)
             sdr.transmit_samples(iq)
             
-            print(f"Transmitted {len(packet_bits)} bits ({len(iq)} samples)\n")
+            print(f"Transmitted {len(packet_bits)} bits\n")
             
             # Wait before next transmission
             time.sleep(2)
