@@ -47,35 +47,6 @@ def fsk_modulate(bits, sps=100, sample_rate=4000000):
     
     return iq
 
-def build_packet(message):
-    """Build packet with preamble + length + data + checksum"""
-    # Longer preamble for better sync (128 bits)
-    preamble_bits = np.tile([1, 0], 64)
-    
-    # Length header (2 bytes = 16 bits)
-    length = len(message)
-    length_bits = []
-    for i in range(16):
-        length_bits.append((length >> (15-i)) & 1)
-    length_bits = np.array(length_bits, dtype=np.uint8)
-    
-    # Data
-    data_bits = string_to_bits(message)
-    
-    # Simple checksum (XOR of all bytes)
-    checksum = 0
-    for char in message:
-        checksum ^= ord(char)
-    checksum_bits = []
-    for i in range(8):
-        checksum_bits.append((checksum >> (7-i)) & 1)
-    checksum_bits = np.array(checksum_bits, dtype=np.uint8)
-    
-    # Combine: preamble + length + data + checksum
-    packet = np.concatenate([preamble_bits, length_bits, data_bits, checksum_bits])
-    
-    return packet
-
 def main():
     config = load_config("config.json")
     sdr = PlutoSDR(uri=config["connection"]["uri"])
@@ -87,17 +58,8 @@ def main():
 
     print("=== Rover GPS Transmitter ===")
     print("Transmitting GPS coordinates every 2 seconds")
+    print("Bit 0 = 50 kHz, Bit 1 = 150 kHz")
     print("Press Ctrl+C to stop\n")
-    
-    # Use a fixed large buffer size
-    # Typical GPS JSON is ~80 chars = 640 bits
-    # Packet: 128 preamble + 16 length + 640 data + 8 checksum = 792 bits
-    # x5 repeats = 3960 bits
-    # x100 sps = 396,000 samples - round up to 400,000
-    BUFFER_SIZE = 400000
-    
-    sdr.setup_tx_buffer(BUFFER_SIZE)
-    print(f"Buffer size: {BUFFER_SIZE} samples\n")
     
     try:
         while True:
@@ -106,27 +68,25 @@ def main():
             
             print(f"Sending: {gps_json}")
             
-            # Build packet
-            packet_bits = build_packet(gps_json)
+            # Preamble: alternating bits (same as BPSK)
+            preamble_bits = np.tile([1, 0], 32)  # 64 bits
+            data_bits = string_to_bits(gps_json)
             
-            # Repeat packet 5 times for reliability (increased from 3)
-            all_bits = np.tile(packet_bits, 5)
+            # Send multiple copies (same as BPSK)
+            packet = np.concatenate([preamble_bits, data_bits])
+            all_bits = np.tile(packet, 3)
             
-            # Modulate
             iq = fsk_modulate(all_bits, sps=100, sample_rate=config["tx"]["sample_rate"])
             
-            # Pad to buffer size if needed
-            if len(iq) < BUFFER_SIZE:
-                padding = np.zeros(BUFFER_SIZE - len(iq), dtype=np.complex64)
-                iq = np.concatenate([iq, padding])
-            elif len(iq) > BUFFER_SIZE:
-                print(f"WARNING: Signal too large ({len(iq)} > {BUFFER_SIZE}), truncating")
-                iq = iq[:BUFFER_SIZE]
+            print(f"Total samples: {len(iq)}")
+            
+            # Key: setup buffer to exact size each time (like BPSK does)
+            sdr.setup_tx_buffer(len(iq))
             
             # Transmit
             sdr.transmit_samples(iq)
             
-            print(f"Transmitted {len(packet_bits)} bits ({len(iq)} samples)\n")
+            print(f"Transmitted!\n")
             
             # Wait before next transmission
             time.sleep(2)
