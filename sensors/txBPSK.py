@@ -39,6 +39,11 @@ def main():
     # Convert message to bits
     data_bits = string_to_bits(message)
     
+    print(f"Message '{message}' in bits:")
+    for i, char in enumerate(message):
+        char_bits = data_bits[i*8:(i+1)*8]
+        print(f"  {char} = {''.join(str(b) for b in char_bits)}")
+    
     # Combine: preamble + data, then REPEAT 5 times so we always catch one
     packet = np.concatenate([preamble_bits, data_bits])
     all_bits = np.tile(packet, 5)  # Send 5 copies back-to-back
