@@ -22,7 +22,7 @@
     "frequency": 915000000,
     "sample_rate": 4000000,
     "bandwidth": 2000000,
-    "gain": -10,
+    "gain": 10,
     "buffer_size": 131072
   },
 
