@@ -4,46 +4,111 @@ from sdr_control import PlutoSDR, load_config
 
 def bits_to_bytes(bits):
     bits = np.array(bits, dtype=np.uint8)
-    # pad to multiple of 8
-    extra = 8 - (len(bits) % 8)
-    if extra != 8:
-        bits = np.concatenate([bits, np.zeros(extra, dtype=np.uint8)])
+    # pad to multiple of 8 only if needed
+    remainder = len(bits) % 8
+    if remainder != 0:
+        bits = np.pad(bits, (0, 8 - remainder), mode='constant')
     return np.packbits(bits).tobytes()
+
+def raised_cosine_filter(beta=0.35, span=10, sps=40):
+    """Root raised cosine matched filter (same as TX)"""
+    t = np.arange(-span*sps//2, span*sps//2) / sps
+    h = np.zeros(len(t))
+    
+    for i, ti in enumerate(t):
+        if ti == 0:
+            h[i] = (1 + beta*(4/np.pi - 1))
+        elif abs(ti) == 1/(4*beta) and beta != 0:
+            h[i] = (beta/np.sqrt(2)) * ((1+2/np.pi)*np.sin(np.pi/(4*beta)) + 
+                                         (1-2/np.pi)*np.cos(np.pi/(4*beta)))
+        else:
+            h[i] = (np.sin(np.pi*ti*(1-beta)) + 4*beta*ti*np.cos(np.pi*ti*(1+beta))) / \
+                   (np.pi*ti*(1-(4*beta*ti)**2))
+    
+    return h / np.sqrt(np.sum(h**2))
 
 def bpsk_demodulate(iq_samples, sps=40):
     """
-    Convert IQ samples to bits
+    Convert IQ samples to bits with matched filtering
     """
-    # downsample to symbol rate by taking one sample per symbol
-    symbols = iq_samples[::sps].real
+    # apply matched filter
+    rrc = raised_cosine_filter(beta=0.35, span=10, sps=sps)
+    filtered = np.convolve(iq_samples, rrc, mode='same')
+    
+    # downsample to symbol rate
+    symbols = filtered[::sps].real
+    
+    # decision
     bits = (symbols > 0).astype(int)
     return bits
 
-def find_preamble(bits, preamble=np.tile([1, 0], 64)):
+def find_preamble_correlation(bits, threshold=0.7):
     """
-    Find preamble index in bitstream
+    Find preamble using correlation (more robust than exact match)
     """
-    for i in range(len(bits) - len(preamble)):
-        if np.array_equal(bits[i:i+len(preamble)], preamble):
-            return i + len(preamble)
+    barker13 = np.array([1,1,1,1,1,0,0,1,1,0,1,0,1])
+    preamble = np.tile(barker13, 10)  # 130 bits
+    
+    # convert to -1/+1 for correlation
+    preamble_bipolar = 2*preamble - 1
+    bits_bipolar = 2*bits - 1
+    
+    # correlate
+    corr = np.correlate(bits_bipolar, preamble_bipolar, mode='valid')
+    corr_norm = corr / len(preamble)
+    
+    # find peak above threshold
+    peaks = np.where(corr_norm > threshold * np.max(corr_norm))[0]
+    
+    if len(peaks) > 0:
+        idx = peaks[0] + len(preamble)  # end of preamble
+        return idx
     return None
+
+def majority_decode(bits_repeated, rep_factor=3):
+    """
+    Decode repetition code: take majority vote of each rep_factor bits
+    """
+    num_orig_bits = len(bits_repeated) // rep_factor
+    decoded = np.zeros(num_orig_bits, dtype=np.uint8)
+    
+    for i in range(num_orig_bits):
+        chunk = bits_repeated[i*rep_factor:(i+1)*rep_factor]
+        decoded[i] = 1 if np.sum(chunk) > rep_factor/2 else 0
+    
+    return decoded
 
 def decode_packet(bits):
     """
-    Extract packet after preamble
+    Extract packet after preamble with error correction
     """
-    preamble_len = 128
-    idx = find_preamble(bits)
+    idx = find_preamble_correlation(bits, threshold=0.7)
     if idx is None:
         return None
-
+    
+    # sanity check: enough bits for length header?
+    if idx + 16 > len(bits):
+        return None
+        
     # get length header (16 bits)
     length_bits = bits[idx:idx+16]
-    length_bytes = bits_to_bytes(length_bits)
+    length_bytes = np.packbits(length_bits).tobytes()
     packet_len = int.from_bytes(length_bytes, "little")
-
-    # extract payload bits
-    payload_bits = bits[idx+16: idx+16 + packet_len*8]
+    
+    # sanity check packet length
+    if packet_len > 1024 or packet_len == 0:
+        return None
+    
+    # extract repeated payload bits (3x repetition)
+    payload_bits_repeated_len = packet_len * 8 * 3
+    if idx + 16 + payload_bits_repeated_len > len(bits):
+        return None
+        
+    payload_bits_repeated = bits[idx+16: idx+16 + payload_bits_repeated_len]
+    
+    # decode using majority voting
+    payload_bits = majority_decode(payload_bits_repeated, rep_factor=3)
+    
     payload_bytes = bits_to_bytes(payload_bits)
 
     try:
