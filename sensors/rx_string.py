@@ -13,7 +13,7 @@ def bpsk_demodulate(samples):
 
 def bits_to_string(bits):
     bit_str = ''.join(str(b) for b in bits)
-
+    print(f"the bit string: {bit_str}")
     # Find preamble
     idx = bit_str.find(PREAMBLE)
     if idx == -1:
