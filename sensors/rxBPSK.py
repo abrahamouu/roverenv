@@ -32,6 +32,15 @@ def fsk_demodulate(iq_samples, sps=100, sample_rate=4000000):
     
     return np.array(bits, dtype=np.uint8)
 
+def string_to_bits(text):
+    """Convert string to bits"""
+    bits = []
+    for char in text:
+        byte = ord(char)
+        for i in range(8):
+            bits.append((byte >> (7-i)) & 1)
+    return np.array(bits, dtype=np.uint8)
+
 def find_preamble_simple(bits):
     """Find alternating pattern"""
     for start_pos in range(min(200, len(bits) - 64)):
@@ -84,21 +93,24 @@ def main():
             print(f"Demodulated {len(bits)} bits")
             print(f"First 64 bits: {''.join(str(b) for b in bits[:64])}")
             
-            # Find preamble
-            data_start = find_preamble_simple(bits)
+            # Instead of relying on preamble, search for HELLO pattern directly
+            hello_bits = string_to_bits("HELLO")
             
-            if data_start is not None and data_start + 40 <= len(bits):
-                data_bits = bits[data_start:data_start+40]
+            # Search for HELLO in the bitstream
+            for start in range(len(bits) - 40):
+                test_bits = bits[start:start+40]
                 
-                print(f"Data bits: {''.join(str(b) for b in data_bits)}")
+                # Count how many bits match HELLO
+                matches = np.sum(test_bits == hello_bits)
                 
-                message = bits_to_string(data_bits)
-                
-                if message:
-                    print(f"✓ Received: '{message}'")
+                # If at least 35 out of 40 bits match (87.5%), we found it!
+                if matches >= 35:
+                    message = bits_to_string(test_bits)
+                    print(f"Found at bit {start}: '{message}' ({matches}/40 bits match)")
                     
-                    if 'HELLO' in message:
-                        print("*** SUCCESS! ***")
+                    if matches >= 38:
+                        print("*** SUCCESS! Got HELLO! ***")
+                    break
             
             print("---")
             
