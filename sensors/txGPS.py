@@ -92,9 +92,9 @@ def main():
     # Use a fixed large buffer size
     # Typical GPS JSON is ~80 chars = 640 bits
     # Packet: 128 preamble + 16 length + 640 data + 8 checksum = 792 bits
-    # x3 repeats = 2376 bits
-    # x100 sps = 237,600 samples - round up to 250,000
-    BUFFER_SIZE = 250000
+    # x5 repeats = 3960 bits
+    # x100 sps = 396,000 samples - round up to 400,000
+    BUFFER_SIZE = 400000
     
     sdr.setup_tx_buffer(BUFFER_SIZE)
     print(f"Buffer size: {BUFFER_SIZE} samples\n")

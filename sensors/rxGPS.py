@@ -128,11 +128,12 @@ def main():
     sdr.set_rx_gain_mode("manual")
     sdr.set_rx_gain(50)
 
-    # Larger buffer to capture full transmission
-    sdr.setup_rx_buffer(262144)
+    # Match TX buffer size - need to capture 400,000 samples
+    sdr.setup_rx_buffer(400000)
     
     print("=== Laptop GPS Receiver ===")
     print("Listening for rover GPS coordinates...")
+    print("Buffer size: 400,000 samples")
     print("Press Ctrl+C to stop\n")
     
     last_message = None
