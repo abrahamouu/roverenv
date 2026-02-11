@@ -39,14 +39,16 @@ def main():
     # Convert message to bits
     data_bits = string_to_bits(message)
     
-    # Combine: preamble + data
-    all_bits = np.concatenate([preamble_bits, data_bits])
+    # Combine: preamble + data, then REPEAT 5 times so we always catch one
+    packet = np.concatenate([preamble_bits, data_bits])
+    all_bits = np.tile(packet, 5)  # Send 5 copies back-to-back
     
     # Modulate
     iq = simple_bpsk_modulate(all_bits, sps=40)
     
-    print(f"Transmitting: '{message}'")
-    print(f"Total bits: {len(all_bits)} (preamble: {len(preamble_bits)}, data: {len(data_bits)})")
+    print(f"Transmitting: '{message}' (5 copies)")
+    print(f"Single packet: {len(packet)} bits (preamble: {len(preamble_bits)}, data: {len(data_bits)})")
+    print(f"Total bits: {len(all_bits)}")
     print(f"Total samples: {len(iq)}")
     
     sdr.setup_tx_buffer(len(iq))

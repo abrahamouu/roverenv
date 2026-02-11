@@ -2,27 +2,35 @@ import numpy as np
 from sdr_control import PlutoSDR, load_config
 
 def simple_bpsk_demodulate(iq_samples, sps=40):
-    """Simple BPSK demod: just sample every sps samples and check sign"""
-    # Take one sample per symbol
-    symbols = iq_samples[::sps].real
+    """Simple BPSK demod: try all phases and pick the best"""
+    best_bits = None
+    best_energy = 0
     
-    # Convert to bits: positive = 1, negative = 0
-    bits = (symbols > 0).astype(np.uint8)
+    # Try different sampling offsets (phases)
+    for phase in range(sps):
+        symbols = iq_samples[phase::sps].real
+        energy = np.sum(symbols**2)
+        
+        if energy > best_energy:
+            best_energy = energy
+            best_bits = (symbols > 0).astype(np.uint8)
     
-    return bits
+    return best_bits
 
 def find_preamble_simple(bits):
-    """Find alternating 10101010... pattern (64 bits)"""
-    preamble = np.tile([1, 0], 32)
+    """Find alternating 10101010... pattern - very lenient"""
     
-    # Search for preamble with some tolerance
-    for i in range(len(bits) - len(preamble)):
-        # Count how many bits match
-        matches = np.sum(bits[i:i+len(preamble)] == preamble)
+    # Look for at least 40 bits of mostly alternating pattern
+    for start_pos in range(min(200, len(bits) - 64)):
+        # Count transitions (bit changes) in next 64 bits
+        segment = bits[start_pos:start_pos+64]
+        transitions = np.sum(segment[:-1] != segment[1:])
         
-        # If at least 90% match, we found it
-        if matches > len(preamble) * 0.9:
-            return i + len(preamble)  # Return position after preamble
+        # Alternating pattern should have ~63 transitions in 64 bits
+        # Accept if at least 50 transitions (about 80%)
+        if transitions >= 50:
+            print(f"Found alternating pattern at {start_pos}, transitions: {transitions}/63")
+            return start_pos + 64  # Return position after preamble
     
     return None
 
@@ -63,21 +71,42 @@ def main():
             # Receive samples
             iq = sdr.receive_samples()
             
+            print(f"Received {len(iq)} samples, max power: {np.max(np.abs(iq)):.1f}")
+            
             # Demodulate to bits
             bits = simple_bpsk_demodulate(iq, sps=40)
+            
+            print(f"Demodulated to {len(bits)} bits")
+            print(f"First 100 bits: {''.join(str(b) for b in bits[:100])}")
             
             # Find preamble
             data_start = find_preamble_simple(bits)
             
             if data_start is not None:
-                # Extract data after preamble
-                data_bits = bits[data_start:data_start+40]  # 5 chars * 8 bits = 40 bits
+                print(f"Found preamble at bit {data_start}")
                 
-                # Convert to string
-                message = bits_to_string(data_bits)
+                # Skip a few extra bits as guard interval to avoid preamble remnants
+                data_start += 8  # Skip 8 more bits to be safe
                 
-                if message:
-                    print(f"\n✓ Received: '{message}'")
+                # Extract exactly 40 bits for "HELLO"
+                if data_start + 40 <= len(bits):
+                    data_bits = bits[data_start:data_start+40]
+                    
+                    print(f"Data bits: {''.join(str(b) for b in data_bits)}")
+                    
+                    # Convert to string
+                    message = bits_to_string(data_bits)
+                    
+                    if message and len(message) >= 3:  # Should get at least 3 chars
+                        print(f"✓ Received: '{message}'")
+                        
+                        # Check if it's actually HELLO
+                        if 'HELLO' in message or 'HELL' in message or 'ELLO' in message:
+                            print(f"*** SUCCESS! Got HELLO! ***")
+            else:
+                print("No preamble found")
+            
+            print("---")
             
     except KeyboardInterrupt:
         print("\nStopping...")
