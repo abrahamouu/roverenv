@@ -167,19 +167,21 @@ def transmit_once(sdr):
     tx_params = sdr.get_tx_parameters()
     sample_rate = float(tx_params["sample_rate"])
 
-
     iq = fsk_modulate(all_bits, sps=100, sample_rate=sample_rate)
 
     max_samples = 220000
-    sdr.setup_tx_buffer(max_samples)
 
     if len(iq) < max_samples:
         padding = np.zeros(max_samples - len(iq), dtype=np.complex64)
         iq = np.concatenate([iq, padding])
 
+ 
+    if not hasattr(sdr, "tx_buf"):
+        print("Setting up TX buffer...")
+        sdr.setup_tx_buffer(max_samples)
+
     print(f"Total samples: {len(iq)}")
 
-    # 🔥 BURST 5 TIMES
     for _ in range(5):
         sdr.transmit_samples(iq)
         time.sleep(0.05)
