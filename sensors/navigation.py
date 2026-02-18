@@ -4,6 +4,7 @@ Core navigation using IMU double integration with magnetometer drift compensatio
 Implements relative positioning between GPS waypoints.
 """
 import time
+import math
 import config
 from imu import get_accel
 from magnetometer import get_heading_basic
@@ -85,12 +86,27 @@ class Navigator:
         # Velocity update with decay (simulates friction/drag)
         self.vx = self.vx * config.VELOCITY_DECAY_FACTOR + ax_earth * dt
         self.vy = self.vy * config.VELOCITY_DECAY_FACTOR + ay_earth * dt
+
+        # Apply heading correction to prevent drift during straight runs
+        if self.dest_x is not None and self.dest_y is not None:
+            heading_error = self.get_heading_error()
+            if 5 < abs(heading_error) < config.HEADING_TOLERANCE:
+                vel_mag = math.sqrt(self.vx**2 + self.vy**2)
+                if vel_mag > 0.01:
+                    target_bearing = self.get_bearing_to_destination()
+                    target_rad = math.radians(target_bearing)
+                    
+                    vx_desired = vel_mag * math.sin(target_rad)
+                    vy_desired = vel_mag * math.cos(target_rad)
+                    
+                    self.vx = self.vx + (vx_desired - self.vx) * config.HEADING_CORRECTION_GAIN
+                    self.vy = self.vy + (vy_desired - self.vy) * config.HEADING_CORRECTION_GAIN
         
         # Position update
         self.x += self.vx * dt
         self.y += self.vy * dt
         
-        # Return state for logging
+        # Return state 
         return {
             'x': self.x,
             'y': self.y,
@@ -147,6 +163,11 @@ class Navigator:
         High-level navigation decision.
         Returns: ('forward'|'turn_left'|'turn_right'|'stop', speed)
         """
+        dist = self.get_distance_to_destination()
+
+        if dist < config.MIN_MOVE_DISTANCE:
+            return 'stop', 0.0
+        
         if self.has_reached_destination():
             return 'stop', 0.0
         

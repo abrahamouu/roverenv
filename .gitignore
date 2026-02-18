@@ -13,8 +13,7 @@ lib64/
 seniordesign/
 
 lib64
-test_log.csv
-*.csv
+
 
 .DS_Store
 **/.DS_Store
