@@ -9,7 +9,7 @@ import motor_helper as mh
 from sdr_control import PlutoSDR
 from fastapi import HTTPException
 import txGPS
-from main_control import RoverController
+from main import RoverController
 
 
 
@@ -23,17 +23,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-control_state = {
-    "dest_x": 0.0,
-    "dest_y": 0.0,
-    "base_speed": config.BASE_SPEED,
-    "turn_speed": config.TURN_SPEED,
-    "updated": False,
-    "stop": False,   
-}
+# control_state = {
+#     "dest_x": 0.0,
+#     "dest_y": 0.0,
+#     "base_speed": config.BASE_SPEED,
+#     "turn_speed": config.TURN_SPEED,
+#     "updated": False,
+#     "stop": False,   
+# }
 
 
-state_lock = threading.Lock()
+# state_lock = threading.Lock()
+from sharedstate import control_state, state_lock
 
 # ---------- API models ----------
 class XYCommand(BaseModel):
@@ -278,3 +279,8 @@ def stop_navigation():
     mh.stop()
 
     return {"status": "navigation stopped"}
+
+
+@app.get("/")
+def health():
+    return {"status": "online"}

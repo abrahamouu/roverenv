@@ -11,7 +11,8 @@ from gpsmanager import init_gps, get_position
 from coordinate_transform import set_reference_point, latlon_to_xy
 from navigation import Navigator
 import motor_helper
-from control_server import control_state, state_lock
+# from control_server import control_state, state_lock
+from sharedstate import control_state, state_lock
 
 
 
