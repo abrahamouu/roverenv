@@ -9,6 +9,8 @@ import motor_helper as mh
 from sdr_control import PlutoSDR
 from fastapi import HTTPException
 import txGPS
+from main_control import RoverController
+
 
 
 
@@ -27,7 +29,9 @@ control_state = {
     "base_speed": config.BASE_SPEED,
     "turn_speed": config.TURN_SPEED,
     "updated": False,
+    "stop": False,   
 }
+
 
 state_lock = threading.Lock()
 
@@ -60,6 +64,18 @@ class SDRConfig(BaseModel):
 
     gain_mode: str | None = None
     gain: int | None = None
+
+
+# ---------- Navigation state ----------
+nav_thread = None
+nav_controller = None
+nav_lock = threading.Lock()
+
+class NavStartCommand(BaseModel):
+    dest_x: float
+    dest_y: float
+    base_speed: float
+    turn_speed: float
 
 
 
@@ -100,8 +116,14 @@ def test_movement():
 @app.post("/stop")
 def force_stop():
     STOP_EVENT.set()
+
+    with state_lock:
+        control_state["stop"] = True
+        control_state["updated"] = False
+
     mh.stop()
     return {"status": "INTERRUPT: STOP"}
+
 
 @app.post("/sdr/connect")
 def connect_sdr(cmd: SDRConnectCommand):
@@ -202,3 +224,57 @@ def trigger_tx_gps():
         print("TX ERROR:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+
+# ---------- Navigation Endpoints ----------
+
+@app.post("/nav/start")
+def start_navigation(cmd: NavStartCommand):
+    global nav_thread, nav_controller
+
+    with nav_lock:
+        if nav_thread and nav_thread.is_alive():
+            return {"status": "Navigation already running"}
+
+        # Update shared control state
+        with state_lock:
+            control_state["dest_x"] = cmd.dest_x
+            control_state["dest_y"] = cmd.dest_y
+            control_state["base_speed"] = cmd.base_speed
+            control_state["turn_speed"] = cmd.turn_speed
+            control_state["updated"] = True
+            control_state["stop"] = False
+
+        # Clear interrupt flag
+        STOP_EVENT.clear()
+
+        # Create controller
+        nav_controller = RoverController()
+
+        def run_nav():
+            try:
+                nav_controller.run()
+            except Exception as e:
+                print("Navigation error:", e)
+                mh.stop()
+
+        nav_thread = threading.Thread(
+            target=run_nav,
+            daemon=True
+        )
+        nav_thread.start()
+
+    return {"status": "navigation started"}
+
+@app.post("/nav/stop")
+def stop_navigation():
+    global nav_controller
+
+    STOP_EVENT.set()
+
+    with state_lock:
+        control_state["updated"] = False
+        control_state["stop"] = True
+
+    mh.stop()
+
+    return {"status": "navigation stopped"}
