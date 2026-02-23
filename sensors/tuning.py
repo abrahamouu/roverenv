@@ -3,7 +3,8 @@ init_imu()
 import time
 
 readings = []
-for _ in range(100):
+print("Collecting 500 samples, keep rover still...")
+for _ in range(500):       # was 100, more samples = more stable average
     readings.append(get_accel())
     time.sleep(0.02)
 
