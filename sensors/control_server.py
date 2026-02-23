@@ -288,13 +288,14 @@ def health():
 
 @app.get("/gps/current")
 def get_gps():
-    try:
-        data = get_current_gps()
-        return data
-    except Exception as e:
-        return {
-            "lat": None,
-            "lon": None,
-            "has_fix": False,
-            "error": str(e)
-        }
+    packet = gpsd.get_current()
+
+    return {
+        "lat": packet.lat,
+        "lon": packet.lon,
+        "mode": packet.mode,
+        "time": packet.time,      # VERY IMPORTANT
+        "track": packet.track,
+        "speed": packet.hspeed,
+        "satellites": packet.sats
+    }
