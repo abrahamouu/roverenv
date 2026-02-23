@@ -5,66 +5,69 @@ Tune these values through testing and trial/error.
 """
 
 # ========================== SENSOR FREQUENCIES ========================== #
-IMU_FREQUENCY = 50  # Hz - How often to read IMU (find through trial/error)
-GPS_UPDATE_INTERVAL = 30  # seconds - How often to resync position with GPS
-MAG_HEADING_UPDATE = 10  # Hz - How often to update heading from magnetometer
+IMU_FREQUENCY = 50          # Hz
+GPS_UPDATE_INTERVAL = 9999    # seconds — how often to correct position from GPS
 
 # ========================== NAVIGATION THRESHOLDS ========================== #
-POSITION_EPSILON = 2.0  # meters - "Close enough" to destination
-HEADING_TOLERANCE = 20  # degrees - Acceptable heading error before correcting
-MIN_MOVE_DISTANCE = 0.9  # meters - Minimum distance before we start moving
+POSITION_EPSILON = 0.5      # meters — "close enough" to destination
+HEADING_TOLERANCE = 15      # degrees — heading error before correcting course
+MIN_MOVE_DISTANCE = 0.3     # meters — minimum distance before moving
+ESTIMATED_SPEED = 0.28  # m/s — tune this to match your rover's actual speed
+
+# ========================== IMU FILTERING ========================== #
+# Stationary noise threshold — any accel magnitude below this is treated as zero.
+# To calibrate: read accel when rover is completely still, take the magnitude
+# (sqrt(ax^2 + ay^2)) and set this slightly above the max you observe.
+ACCEL_NOISE_THRESHOLD = 0.2    # m/s² — tune this first
+
+# Velocity cap — clamps velocity to prevent runaway from bad IMU readings
+MAX_VELOCITY = 1.5              # m/s — should be faster than your rover can actually go
 
 # ========================== DRIFT COMPENSATION ========================== #
-# Gains for correcting IMU drift using magnetometer
-HEADING_CORRECTION_GAIN = 0.1  # 0.0-1.0, higher = more aggressive correction
-VELOCITY_DECAY_FACTOR = 0.98  # Simulate friction/drag to prevent runaway velocity
-GPS_RESET_THRESHOLD = 5.0  # meters - If IMU drift exceeds this, force GPS resync
+HEADING_CORRECTION_GAIN = 0.1   # 0.0-1.0, higher = more aggressive
+VELOCITY_DECAY_FACTOR = 0.98    # was 0.98 — more aggressive decay prevents drift buildup
+                                 # raise toward 0.99 if rover stops too soon
+
+# GPS correction blend weight — higher = trust GPS more on resync
+GPS_RESET_THRESHOLD = 5.0       # meters — if IMU drift exceeds this, force GPS resync
 
 # ========================== MOTOR CONTROL ========================== #
-BASE_SPEED = 0.6  # Default motor speed (0.0-1.0)
-TURN_SPEED = 1.0  # Speed when turning
-MIN_SPEED = 0.2  # Minimum speed to overcome static friction
-
-# Proportional control for heading correction
-HEADING_KP = 0.02  # Proportional gain for heading error -> turn rate
+BASE_SPEED = 0.6
+TURN_SPEED = 1.0
+MIN_SPEED = 0.2
+HEADING_KP = 0.02
 
 # ========================== SENSOR ADDRESSES ========================== #
-IMU_I2C_ADDRESS = 0x68  # MPU6050 default address
+IMU_I2C_ADDRESS = 0x68
 
 # GPS Configuration
-USE_IP_GEOLOCATION = False  # Set to True to use IP geolocation instead of real GPS
-USE_GPSD = True  # Use gpsd daemon for GPS
-
-# IP Geolocation API (fallback when USE_IP_GEOLOCATION = True)
+USE_IP_GEOLOCATION = False
+USE_GPSD = True
 IP_GEO_API_URL = "http://ip-api.com/json/"
 
 # ========================== CALIBRATION VALUES ========================== #
-# Magnetometer calibration (hard iron offset)
-# TODO: Run calibration routine and update these values
+# Magnetometer hard iron offset
 MAG_OFFSET_X = 0.0
 MAG_OFFSET_Y = 0.0
 MAG_OFFSET_Z = 0.0
 
-# Accelerometer bias (at rest, should read ~9.81 in z, 0 in x,y)
-ACCEL_BIAS_X = 0.4
-ACCEL_BIAS_Y = 0.05
-ACCEL_BIAS_Z = 0.0
+# Accelerometer bias — measure with rover flat and still (see README)
+ACCEL_BIAS_X = 0.1615      # update with your measured value
+ACCEL_BIAS_Y = -0.1051      # update with your measured value
 
-# Gyro bias (at rest, should read 0)
+# Gyro bias
 GYRO_BIAS_X = 0.0
 GYRO_BIAS_Y = 0.0
 GYRO_BIAS_Z = 0.0
 
-# Magnetic declination for your location (degrees)
-# Find yours at: https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml
-MAGNETIC_DECLINATION = 12.5  # Rancho Santa Margarita, CA approx
+# Magnetic declination — Rancho Santa Margarita, CA
+MAGNETIC_DECLINATION = 12.5
 
 # ========================== COORDINATE SYSTEM ========================== #
-# Reference point for local coordinate system (set from first GPS reading)
-REF_LAT = None  # Will be set at runtime
+REF_LAT = None
 REF_LON = None
 
 # ========================== DEBUG FLAGS ========================== #
-DEBUG_PRINT_SENSORS = False  # Print raw sensor values
-DEBUG_PRINT_NAVIGATION = True  # Print navigation calculations
-DEBUG_PRINT_MOTORS = False  # Print motor commands
+DEBUG_PRINT_SENSORS = False
+DEBUG_PRINT_NAVIGATION = True
+DEBUG_PRINT_MOTORS = False

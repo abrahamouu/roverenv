@@ -2,6 +2,7 @@
 __pycache__/
 *.pycache
 
+/roverenv/share
 bin/
 
 pyvenv.cfg
