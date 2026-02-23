@@ -10,7 +10,7 @@ from sdr_control import PlutoSDR
 from fastapi import HTTPException
 import txGPS
 from main import RoverController
-
+from gps_test import get_current_gps
 
 
 
@@ -284,3 +284,17 @@ def stop_navigation():
 @app.get("/")
 def health():
     return {"status": "online"}
+
+
+@app.get("/gps/current")
+def get_gps():
+    try:
+        data = get_current_gps()
+        return data
+    except Exception as e:
+        return {
+            "lat": None,
+            "lon": None,
+            "has_fix": False,
+            "error": str(e)
+        }
