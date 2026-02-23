@@ -9,6 +9,7 @@ import motor_helper as mh
 from sdr_control import PlutoSDR
 from fastapi import HTTPException
 import txGPS
+import gpsd
 from main import RoverController
 from gps_test import get_current_gps
 
