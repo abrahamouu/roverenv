@@ -67,6 +67,8 @@ class SDRConfig(BaseModel):
     gain_mode: str | None = None
     gain: int | None = None
 
+class TxGPSCommand(BaseModel):
+    rover_id: str
 
 # ---------- Navigation state ----------
 nav_thread = None
@@ -204,21 +206,38 @@ def disconnect_sdr(rover_id: str):
 
 import txGPS
 
+# @app.post("/sdr/txgps")
+# def trigger_tx_gps():
+#     try:
+#         # Directly create SDR and transmit
+#         sdr = PlutoSDR(uri="ip:192.168.2.1")
+
+#         # If needed, set TX params here (optional)
+#         # sdr.set_tx_frequency(...)
+#         # sdr.set_tx_sample_rate(...)
+#         # sdr.set_tx_bandwidth(...)
+#         # sdr.set_tx_gain(...)
+
+#         txGPS.transmit_once(sdr)
+
+#         sdr.close()
+
+#         return {"status": "GPS transmission sent"}
+
+#     except Exception as e:
+#         print("TX ERROR:", e)
+#         raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/sdr/txgps")
-def trigger_tx_gps():
+def trigger_tx_gps(cmd: TxGPSCommand):
+    if cmd.rover_id not in sdr_instances:
+        raise HTTPException(status_code=400, detail="SDR not connected")
+
+    sdr = sdr_instances[cmd.rover_id]
+
     try:
-        # Directly create SDR and transmit
-        sdr = PlutoSDR(uri="ip:192.168.2.1")
-
-        # If needed, set TX params here (optional)
-        # sdr.set_tx_frequency(...)
-        # sdr.set_tx_sample_rate(...)
-        # sdr.set_tx_bandwidth(...)
-        # sdr.set_tx_gain(...)
-
-        txGPS.transmit_once(sdr)
-
-        sdr.close()
+        with sdr_lock:
+            txGPS.transmit_once(sdr)
 
         return {"status": "GPS transmission sent"}
 

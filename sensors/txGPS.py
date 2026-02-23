@@ -111,15 +111,30 @@
 import numpy as np
 import time
 import json
+from gps_test import get_current_gps
 
 def get_gps_data():
+    # payload = {
+    #     "type": "gps",
+    #     "lat": 34.0689,
+    #     "lon": -118.4452,
+    #     "alt": 100.5,
+    #     "t": int(time.time())
+    # }
+    # return json.dumps(payload)
+    data = get_current_gps()
+
+    if not data["has_fix"]:
+        print("No GPS fix — skipping TX")
+        return None
+
     payload = {
         "type": "gps",
-        "lat": 34.0689,
-        "lon": -118.4452,
-        "alt": 100.5,
+        "lat": data["lat"],
+        "lon": data["lon"],
         "t": int(time.time())
     }
+
     return json.dumps(payload)
 
 
