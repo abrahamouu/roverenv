@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import threading
 import config
-import movement_test   # 👈 import test
+import movement_test   
 from interrupt import STOP_EVENT
 import motor_helper as mh
 from sdr_control import PlutoSDR
@@ -50,6 +50,9 @@ class SpeedCommand(BaseModel):
 sdr_instances = {}   # rover_id -> PlutoSDR
 sdr_lock = threading.Lock()
 
+gps_tx_threads = {}     # rover_id -> thread
+gps_tx_flags = {}       # rover_id -> stop event
+
 
 class SDRConnectCommand(BaseModel):
     rover_id: str
@@ -84,6 +87,25 @@ class NavStartCommand(BaseModel):
 
 
 # ---------- API endpoints ----------
+
+import time
+
+def gps_tx_loop(rover_id: str):
+    stop_event = gps_tx_flags[rover_id]
+    sdr = sdr_instances[rover_id]
+
+    print(f"[GPS TX] Started for {rover_id}")
+
+    while not stop_event.is_set():
+        try:
+            with sdr_lock:
+                txGPS.transmit_once(sdr)
+        except Exception as e:
+            print("GPS TX loop error:", e)
+
+        stop_event.wait(10)   # transmit every 10 seconds
+
+    print(f"[GPS TX] Stopped for {rover_id}")
 @app.post("/command/xy")
 def set_xy(cmd: XYCommand):
     with state_lock:
@@ -244,6 +266,40 @@ def trigger_tx_gps(cmd: TxGPSCommand):
     except Exception as e:
         print("TX ERROR:", e)
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/sdr/txgps/start")
+def start_gps_tx(cmd: TxGPSCommand):
+    if cmd.rover_id not in sdr_instances:
+        raise HTTPException(400, "SDR not connected")
+
+    if cmd.rover_id in gps_tx_threads:
+        return {"status": "already running"}
+
+    stop_event = threading.Event()
+    gps_tx_flags[cmd.rover_id] = stop_event
+
+    thread = threading.Thread(
+        target=gps_tx_loop,
+        args=(cmd.rover_id,),
+        daemon=True
+    )
+
+    gps_tx_threads[cmd.rover_id] = thread
+    thread.start()
+
+    return {"status": "GPS TX started"}
+
+@app.post("/sdr/txgps/stop")
+def stop_gps_tx(cmd: TxGPSCommand):
+    if cmd.rover_id not in gps_tx_threads:
+        return {"status": "not running"}
+
+    gps_tx_flags[cmd.rover_id].set()
+
+    del gps_tx_threads[cmd.rover_id]
+    del gps_tx_flags[cmd.rover_id]
+
+    return {"status": "GPS TX stopped"}
 
 
 # ---------- Navigation Endpoints ----------
