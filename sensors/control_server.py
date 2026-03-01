@@ -84,6 +84,10 @@ class NavStartCommand(BaseModel):
     base_speed: float
     turn_speed: float
 
+class MissionCommand(BaseModel):
+    waypoints: list[XYCommand]
+    base_speed: float
+    turn_speed: float
 
 
 # ---------- API endpoints ----------
@@ -341,6 +345,43 @@ def start_navigation(cmd: NavStartCommand):
         nav_thread.start()
 
     return {"status": "navigation started"}
+
+@app.post("/nav/mission")
+def run_mission(cmd: MissionCommand):
+    def mission_thread():
+        controller = RoverController()
+
+        for wp in cmd.waypoints:
+            if STOP_EVENT.is_set():
+                break
+
+            with state_lock:
+                control_state["dest_x"] = wp.x
+                control_state["dest_y"] = wp.y
+                control_state["base_speed"] = cmd.base_speed
+                control_state["turn_speed"] = cmd.turn_speed
+                control_state["updated"] = True
+                control_state["stop"] = False
+
+            controller.run()   # blocks until reached
+
+        motor_helper.stop()
+        print("Mission complete.")
+
+    threading.Thread(target=mission_thread, daemon=True).start()
+
+    return {"status": "mission started"}
+
+@app.get("/nav/state")
+def nav_state():
+    if nav_controller is None:
+        return {"x": 0, "y": 0, "heading": 0}
+
+    return {
+        "x": nav_controller.nav.x,
+        "y": nav_controller.nav.y,
+        "heading": nav_controller.nav.get_heading_error()
+    }
 
 @app.post("/nav/stop")
 def stop_navigation():

@@ -40,6 +40,7 @@ class RoverController:
         self.last_gps_update = time.time()
         self.running = False
 
+
     # ------------------------------------------------------------------ #
     #  GPS helpers
     # ------------------------------------------------------------------ #
@@ -187,6 +188,7 @@ class RoverController:
                     time.sleep(loop_time - elapsed)
 
             motor_helper.stop()
+            self.running = False #for multi node traversal to enable clean reuse
             print("Navigation complete!")
 
         except KeyboardInterrupt:
