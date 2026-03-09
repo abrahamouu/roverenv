@@ -50,6 +50,10 @@ class SpeedCommand(BaseModel):
 sdr_instances = {}   # rover_id -> PlutoSDR
 sdr_lock = threading.Lock()
 
+# ---------- RX buffer state ----------
+rx_buffers = {}        # rover_id -> list of messages
+rx_seq = {}            # rover_id -> last sequence number
+
 gps_tx_threads = {}     # rover_id -> thread
 gps_tx_flags = {}       # rover_id -> stop event
 
@@ -193,6 +197,13 @@ def configure_sdr(cfg: SDRConfig):
                 if cfg.gain_mode == "manual" and cfg.gain is not None:
                     sdr.set_rx_gain(cfg.gain)
 
+            # START RX LOOP
+            threading.Thread(
+                target=sdr_rx_loop,
+                args=(cfg.rover_id,),
+                daemon=True
+            ).start()
+
         elif cfg.direction == "tx":
             sdr.set_tx_frequency(cfg.frequency * HZ)
             sdr.set_tx_bandwidth(cfg.bandwidth * HZ)
@@ -229,7 +240,43 @@ def disconnect_sdr(rover_id: str):
 
     return {"status": "disconnected"}
 
+@app.get("/sdr/buffer/{rover_id}")
+def get_buffer(rover_id: str, since_seq: int = 0):
 
+    if rover_id not in rx_buffers:
+        return {"messages": [], "max_seq": 0}
+
+    messages = [m for m in rx_buffers[rover_id] if m["seq"] > since_seq]
+
+    max_seq = rx_seq.get(rover_id, 0)
+
+    return {
+        "messages": messages,
+        "max_seq": max_seq
+    }
+
+def push_rx_message(rover_id: str, data: str):
+
+    if rover_id not in rx_buffers:
+        rx_buffers[rover_id] = []
+        rx_seq[rover_id] = 0
+
+    rx_seq[rover_id] += 1
+
+    msg = {
+        "seq": rx_seq[rover_id],
+        "data": data,
+        "timestamp": time.time(),
+        "length": len(data),
+        "direction": "rx"
+    }
+
+    rx_buffers[rover_id].append(msg)
+
+    # keep buffer size manageable
+    if len(rx_buffers[rover_id]) > 200:
+        rx_buffers[rover_id].pop(0)
+    
 import txGPS
 
 # @app.post("/sdr/txgps")
@@ -256,6 +303,7 @@ import txGPS
 
 @app.post("/sdr/txgps")
 def trigger_tx_gps(cmd: TxGPSCommand):
+
     if cmd.rover_id not in sdr_instances:
         raise HTTPException(status_code=400, detail="SDR not connected")
 
@@ -264,6 +312,9 @@ def trigger_tx_gps(cmd: TxGPSCommand):
     try:
         with sdr_lock:
             txGPS.transmit_once(sdr)
+
+        # DEBUG: log transmission in buffer so UI can see it
+        push_rx_message(cmd.rover_id, "GPS packet transmitted")
 
         return {"status": "GPS transmission sent"}
 
@@ -292,6 +343,29 @@ def start_gps_tx(cmd: TxGPSCommand):
     thread.start()
 
     return {"status": "GPS TX started"}
+
+def sdr_rx_loop(rover_id: str):
+
+    sdr = sdr_instances[rover_id]
+
+    print(f"[SDR RX] Started for {rover_id}")
+
+    while True:
+        try:
+            with sdr_lock:
+                samples = sdr.receive()   # read SDR samples
+
+            if samples is None:
+                continue
+
+            msg = f"RX samples {len(samples)}"
+
+            push_rx_message(rover_id, msg)
+
+        except Exception as e:
+            print("SDR RX error:", e)
+
+        time.sleep(0.1)
 
 @app.post("/sdr/txgps/stop")
 def stop_gps_tx(cmd: TxGPSCommand):
