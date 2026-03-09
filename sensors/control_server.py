@@ -350,20 +350,23 @@ def sdr_rx_loop(rover_id: str):
 
     print(f"[SDR RX] Started for {rover_id}")
 
+    # setup buffer once
+    sdr.setup_rx_buffer(4096)
+
     while True:
         try:
             with sdr_lock:
-                samples = sdr.receive()   # read SDR samples
+                samples = sdr.receive_samples()
 
-            if samples is None:
+            if samples is None or len(samples) == 0:
                 continue
 
-            msg = f"RX samples {len(samples)}"
+            msg = f"RX {len(samples)} samples"
 
             push_rx_message(rover_id, msg)
 
         except Exception as e:
-            print("SDR RX error:", e)
+            print("RX error:", e)
 
         time.sleep(0.1)
 
