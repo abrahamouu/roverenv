@@ -348,12 +348,28 @@ def start_navigation(cmd: NavStartCommand):
 
 @app.post("/nav/mission")
 def run_mission(cmd: MissionCommand):
+
+    print("MISSION RECEIVED:", cmd.waypoints)
+
+    if not cmd.waypoints:
+        return {"status": "no waypoints"}
+
     def mission_thread():
+
+        # Reset stop flags
+        STOP_EVENT.clear()
+
+        with state_lock:
+            control_state["stop"] = False
+
         controller = RoverController()
 
         for wp in cmd.waypoints:
+
             if STOP_EVENT.is_set():
                 break
+
+            print(f"Navigating to waypoint: ({wp.x}, {wp.y})")
 
             with state_lock:
                 control_state["dest_x"] = wp.x
@@ -363,9 +379,11 @@ def run_mission(cmd: MissionCommand):
                 control_state["updated"] = True
                 control_state["stop"] = False
 
-            controller.run()   # blocks until reached
+            controller.nav.set_destination(wp.x, wp.y)
 
-        motor_helper.stop()
+            controller.run()
+
+        mh.stop()
         print("Mission complete.")
 
     threading.Thread(target=mission_thread, daemon=True).start()
