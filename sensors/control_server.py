@@ -394,7 +394,7 @@ def sdr_rx_loop(rover_id: str):
 
     print(f"[SDR RX] Started for {rover_id}")
 
-    sdr.setup_rx_buffer(4096)
+    sdr.setup_rx_buffer(131072)
 
     while True:
         try:
