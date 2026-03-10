@@ -12,7 +12,8 @@ import txGPS
 import gpsd
 from main import RoverController
 from gps_test import get_current_gps
-
+import numpy as np
+import json
 
 
 app = FastAPI()
@@ -92,7 +93,50 @@ class MissionCommand(BaseModel):
     waypoints: list[XYCommand]
     base_speed: float
     turn_speed: float
+def fsk_demodulate(iq_samples, sps=100, sample_rate=4000000):
 
+    num_bits = len(iq_samples) // sps
+    bits = []
+
+    for i in range(num_bits):
+        segment = iq_samples[i*sps:(i+1)*sps]
+
+        fft = np.fft.fft(segment)
+        freqs = np.fft.fftfreq(len(segment), 1/sample_rate)
+
+        pos_freqs = freqs[:len(freqs)//2]
+        pos_fft = np.abs(fft[:len(fft)//2])
+
+        peak_idx = np.argmax(pos_fft)
+        peak_freq = abs(pos_freqs[peak_idx])
+
+        if abs(peak_freq - 50000) < abs(peak_freq - 150000):
+            bits.append(0)
+        else:
+            bits.append(1)
+
+    return np.array(bits, dtype=np.uint8)
+
+def bits_to_string(bits):
+
+    chars = []
+
+    for i in range(0, len(bits), 8):
+
+        if i + 8 > len(bits):
+            break
+
+        byte_bits = bits[i:i+8]
+
+        byte_val = 0
+
+        for j, bit in enumerate(byte_bits):
+            byte_val |= (bit << (7-j))
+
+        if 32 <= byte_val <= 126:
+            chars.append(chr(byte_val))
+
+    return ''.join(chars)
 
 # ---------- API endpoints ----------
 
@@ -350,20 +394,48 @@ def sdr_rx_loop(rover_id: str):
 
     print(f"[SDR RX] Started for {rover_id}")
 
-    # setup buffer once
     sdr.setup_rx_buffer(4096)
 
     while True:
         try:
+
             with sdr_lock:
                 samples = sdr.receive_samples()
 
             if samples is None or len(samples) == 0:
                 continue
 
-            msg = f"RX {len(samples)} samples"
+            gps_found = False
 
-            push_rx_message(rover_id, msg)
+            bits = fsk_demodulate(samples, sps=100, sample_rate=4000000)
+            message = bits_to_string(bits)
+
+            if '{"type":"gps"' in message:
+
+                start = message.index('{"type":"gps"')
+
+                if '}' in message[start:]:
+
+                    json_str = message[start:message.index('}', start)+1]
+
+                    try:
+                        data = json.loads(json_str)
+
+                        lat = data["lat"]
+                        lon = data["lon"]
+
+                        push_rx_message(
+                            rover_id,
+                            f"GPS: {lat:.6f}, {lon:.6f}"
+                        )
+
+                        gps_found = True
+
+                    except:
+                        pass
+
+            if not gps_found:
+                push_rx_message(rover_id, f"RX {len(samples)} samples")
 
         except Exception as e:
             print("RX error:", e)
