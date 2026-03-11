@@ -94,9 +94,7 @@ class MissionCommand(BaseModel):
     base_speed: float
     turn_speed: float
 
-GPS_PATTERN = '{"type":"gps"'
-GPS_PATTERN_BITS = string_to_bits(GPS_PATTERN)
-GPS_PATTERN_LEN = len(GPS_PATTERN_BITS)
+
 def fsk_demodulate(iq_samples, sps=100, sample_rate=4000000):
 
     num_bits = len(iq_samples) // sps
@@ -398,7 +396,9 @@ def string_to_bits(text):
         for i in range(8):
             bits.append((byte >> (7-i)) & 1)
     return np.array(bits, dtype=np.uint8)
-
+GPS_PATTERN = '{"type":"gps"'
+GPS_PATTERN_BITS = string_to_bits(GPS_PATTERN)
+GPS_PATTERN_LEN = len(GPS_PATTERN_BITS)
 def sdr_rx_loop(rover_id: str):
 
     sdr = sdr_instances[rover_id]
@@ -490,57 +490,7 @@ def sdr_rx_loop(rover_id: str):
 
         time.sleep(0.1)
 
-    sdr = sdr_instances[rover_id]
-
-    print(f"[SDR RX] Started for {rover_id}")
-
-    sdr.setup_rx_buffer(131072)
-
-    while True:
-        try:
-
-            with sdr_lock:
-                samples = sdr.receive_samples()
-
-            if samples is None or len(samples) == 0:
-                continue
-
-            gps_found = False
-
-            bits = fsk_demodulate(samples, sps=100, sample_rate=4000000)
-            message = bits_to_string(bits)
-
-            if '{"type":"gps"' in message:
-
-                start = message.index('{"type":"gps"')
-
-                if '}' in message[start:]:
-
-                    json_str = message[start:message.index('}', start)+1]
-
-                    try:
-                        data = json.loads(json_str)
-
-                        lat = data["lat"]
-                        lon = data["lon"]
-
-                        push_rx_message(
-                            rover_id,
-                            f"GPS: {lat:.6f}, {lon:.6f}"
-                        )
-
-                        gps_found = True
-
-                    except:
-                        pass
-
-            if not gps_found:
-                push_rx_message(rover_id, f"RX {len(samples)} samples")
-
-        except Exception as e:
-            print("RX error:", e)
-
-        time.sleep(0.1)
+    
 
 @app.post("/sdr/txgps/stop")
 def stop_gps_tx(cmd: TxGPSCommand):
