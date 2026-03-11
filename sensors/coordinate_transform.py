@@ -16,6 +16,9 @@ def set_reference_point(lat, lon):
     Set origin of local Cartesian coordinate system.
     Call once at startup with initial GPS position.
     """
+    if lat is None or lon is None:
+        raise ValueError("Cannot set reference point: GPS fix not available")
+        
     global _ref_lat, _ref_lon
     _ref_lat = lat
     _ref_lon = lon

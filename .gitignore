@@ -2,18 +2,19 @@
 __pycache__/
 *.pycache
 
+/roverenv/share
 bin/
 
 pyvenv.cfg
 
+SDR/venv
 
 lib/
 lib64/
 seniordesign/
 
 lib64
-test_log.csv
-*.csv
+
 
 .DS_Store
 **/.DS_Store
