@@ -25,15 +25,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# control_state = {
-#     "dest_x": 0.0,
-#     "dest_y": 0.0,
-#     "base_speed": config.BASE_SPEED,
-#     "turn_speed": config.TURN_SPEED,
-#     "updated": False,
-#     "stop": False,   
-# }
-
 
 # state_lock = threading.Lock()
 from sharedstate import control_state, state_lock
@@ -192,7 +183,7 @@ def test_movement():
     return {"status": "movement test started"}
 
 
-# -- FORCE STOP 
+#FORCE STOP 
 @app.post("/stop")
 def force_stop():
     STOP_EVENT.set()
@@ -325,27 +316,6 @@ def push_rx_message(rover_id: str, data: str):
     
 import txGPS
 
-# @app.post("/sdr/txgps")
-# def trigger_tx_gps():
-#     try:
-#         # Directly create SDR and transmit
-#         sdr = PlutoSDR(uri="ip:192.168.2.1")
-
-#         # If needed, set TX params here (optional)
-#         # sdr.set_tx_frequency(...)
-#         # sdr.set_tx_sample_rate(...)
-#         # sdr.set_tx_bandwidth(...)
-#         # sdr.set_tx_gain(...)
-
-#         txGPS.transmit_once(sdr)
-
-#         sdr.close()
-
-#         return {"status": "GPS transmission sent"}
-
-#     except Exception as e:
-#         print("TX ERROR:", e)
-#         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/sdr/txgps")
 def trigger_tx_gps(cmd: TxGPSCommand):
@@ -359,7 +329,7 @@ def trigger_tx_gps(cmd: TxGPSCommand):
         with sdr_lock:
             txGPS.transmit_once(sdr)
 
-        # DEBUG: log transmission in buffer so UI can see it
+        
         push_rx_message(cmd.rover_id, "GPS packet transmitted")
 
         return {"status": "GPS transmission sent"}
@@ -628,7 +598,7 @@ def get_gps():
         "lat": packet.lat,
         "lon": packet.lon,
         "mode": packet.mode,
-        "time": packet.time,      # VERY IMPORTANT
+        "time": packet.time,     
         "track": packet.track,
         "speed": packet.hspeed,
         "satellites": packet.sats
