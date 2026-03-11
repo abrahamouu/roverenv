@@ -93,6 +93,10 @@ class MissionCommand(BaseModel):
     waypoints: list[XYCommand]
     base_speed: float
     turn_speed: float
+
+GPS_PATTERN = '{"type":"gps"'
+GPS_PATTERN_BITS = string_to_bits(GPS_PATTERN)
+GPS_PATTERN_LEN = len(GPS_PATTERN_BITS)
 def fsk_demodulate(iq_samples, sps=100, sample_rate=4000000):
 
     num_bits = len(iq_samples) // sps
@@ -387,8 +391,104 @@ def start_gps_tx(cmd: TxGPSCommand):
     thread.start()
 
     return {"status": "GPS TX started"}
+def string_to_bits(text):
+    bits = []
+    for char in text:
+        byte = ord(char)
+        for i in range(8):
+            bits.append((byte >> (7-i)) & 1)
+    return np.array(bits, dtype=np.uint8)
 
 def sdr_rx_loop(rover_id: str):
+
+    sdr = sdr_instances[rover_id]
+
+    print(f"[SDR RX] Started for {rover_id}")
+
+    sdr.setup_rx_buffer(131072)
+
+    search_pattern = '{"type":"gps"'
+    pattern_bits = string_to_bits(search_pattern)
+    pattern_len = len(pattern_bits)
+
+    while True:
+
+        try:
+
+            with sdr_lock:
+                samples = sdr.receive_samples()
+
+            if samples is None or len(samples) == 0:
+                continue
+
+            gps_found = False
+
+            # Demodulate samples into bits
+            bits = fsk_demodulate(samples, sps=100, sample_rate=4000000)
+
+            best_match = 0
+            best_start = None
+
+            # Search for GPS JSON pattern in bitstream
+            for start in range(len(bits) - pattern_len):
+
+                test_bits = bits[start:start + pattern_len]
+
+                matches = np.sum(test_bits == pattern_bits)
+
+                if matches > best_match:
+                    best_match = matches
+                    best_start = start
+
+                # If match quality good enough (~85%)
+                if matches >= int(pattern_len * 0.85):
+
+                    # Decode possible JSON message
+                    message_bits = bits[start:start + 640]   # ~80 chars
+                    message = bits_to_string(message_bits)
+
+                    if '}' in message:
+
+                        json_str = message[:message.index('}') + 1]
+
+                        try:
+
+                            data = json.loads(json_str)
+
+                            lat = data["lat"]
+                            lon = data["lon"]
+
+                            msg = {
+                                "type": "gps",
+                                "lat": lat,
+                                "lon": lon,
+                                "time": data.get("t")
+                            }
+
+                            push_rx_message(
+                                rover_id,
+                                json.dumps(msg)
+                            )
+
+                            print(f"[GPS RX] {lat:.6f}, {lon:.6f}")
+
+                            gps_found = True
+                            break
+
+                        except Exception as e:
+                            print("GPS parse error:", e)
+
+            if not gps_found:
+
+                push_rx_message(
+                    rover_id,
+                    f"RX {len(samples)} samples | best match {best_match}/{pattern_len}"
+                )
+
+        except Exception as e:
+            print("RX error:", e)
+
+        time.sleep(0.1)
 
     sdr = sdr_instances[rover_id]
 
