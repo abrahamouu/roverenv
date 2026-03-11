@@ -1,4 +1,3 @@
-#IMU Orientation 
 import smbus
 import time
 
@@ -51,13 +50,10 @@ class mpu6050:
     def __init__(self, address, bus=1):
         self.address = address
         self.bus = smbus.SMBus(bus)
-        # Wake up the MPU-6050 since it starts in sleep mode
+        # Wake up the MPU-6050
         self.bus.write_byte_data(self.address, self.PWR_MGMT_1, 0x00)
 
-    # I2C communication methods
-
     def read_i2c_word(self, register):
-        # Read the data from the registers
         high = self.bus.read_byte_data(self.address, register)
         low = self.bus.read_byte_data(self.address, register + 1)
 
@@ -69,10 +65,7 @@ class mpu6050:
             return value
 
     def set_accel_range(self, accel_range):
-        # First change it to 0x00 to make sure we write the correct value later
         self.bus.write_byte_data(self.address, self.ACCEL_CONFIG, 0x00)
-
-        # Write the new range to the ACCEL_CONFIG register
         self.bus.write_byte_data(self.address, self.ACCEL_CONFIG, accel_range)
 
     def read_accel_range(self, raw = False):
@@ -125,10 +118,7 @@ class mpu6050:
             return {'x': x, 'y': y, 'z': z}
 
     def set_gyro_range(self, gyro_range):
-        # First change it to 0x00 to make sure we write the correct value later
         self.bus.write_byte_data(self.address, self.GYRO_CONFIG, 0x00)
-
-        # Write the new range to the ACCEL_CONFIG register
         self.bus.write_byte_data(self.address, self.GYRO_CONFIG, gyro_range)
 
     def read_gyro_range(self, raw = False):

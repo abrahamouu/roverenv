@@ -1,9 +1,6 @@
-# coordinate_transform.py
-
 import math
 import config
 
-# Reference point for local coordinate system
 _ref_lat = None
 _ref_lon = None
 
@@ -20,16 +17,15 @@ def set_reference_point(lat, lon):
     print(f"Reference point: {lat:.6f}, {lon:.6f}")
 
 def latlon_to_xy(lat, lon):
-    
     if _ref_lat is None:
         raise ValueError("Call set_reference_point() first")
     
     # Meters per degree
-    lat_m_per_deg = 110540  # ~constant everywhere
+    lat_m_per_deg = 110540 
     lon_m_per_deg = 111320 * math.cos(math.radians(_ref_lat))
     
-    x = (lon - _ref_lon) * lon_m_per_deg  # East (+) / West (-)
-    y = (lat - _ref_lat) * lat_m_per_deg  # North (+) / South (-)
+    x = (lon - _ref_lon) * lon_m_per_deg  
+    y = (lat - _ref_lat) * lat_m_per_deg  
     
     return x, y
 
@@ -57,7 +53,6 @@ def body_to_earth_frame(ax_body, ay_body, heading_deg):
     return ax_earth, ay_earth
 
 def normalize_angle(angle):
-    """Normalize angle to 0-360 range."""
     return angle % 360
 
 def angle_difference(target, current):
@@ -71,11 +66,9 @@ def angle_difference(target, current):
     return diff
 
 def distance_2d(x1, y1, x2, y2):
-    
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 def bearing_to_point(x1, y1, x2, y2):
-    
     dx = x2 - x1
     dy = y2 - y1
     bearing = math.degrees(math.atan2(dx, dy))
@@ -83,7 +76,6 @@ def bearing_to_point(x1, y1, x2, y2):
 
 # Test mode
 if __name__ == "__main__":
-    # Test coordinate conversion
     set_reference_point(33.7015, -117.7528)
     
     # Test: 50m North, 30m East
@@ -95,7 +87,6 @@ if __name__ == "__main__":
     x2, y2 = latlon_to_xy(lat, lon)
     print(f"Round trip: ({x2:.2f}, {y2:.2f}) - Error: {abs(x-x2):.4f}m")
     
-    # Test body->earth frame rotation
     print("\nBody->Earth frame tests:")
     test_cases = [
         (1.0, 0.0, 0),    # Moving forward, heading North

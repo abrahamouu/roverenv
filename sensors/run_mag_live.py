@@ -1,3 +1,4 @@
+# testing IMU calibration
 import time
 import math
 from collections import deque
@@ -12,12 +13,6 @@ mz_w = deque(maxlen=WINDOW)
 h_w  = deque(maxlen=WINDOW)
 
 def circular_stdev(deg_angles):
-    """ 
-    Circular standard deviation for angles in degrees.
-    Correctly handles wrap-around at 0°/360° by treating angles as
-    unit vectors on a circle instead of linear values. 
-    ** Box-Muller Transform = sqrt(-2 * ln(R))
-    """
     if len(deg_angles) < 2:
         return 0.0
     

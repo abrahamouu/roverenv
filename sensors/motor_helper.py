@@ -1,8 +1,6 @@
 from gpiozero import PWMOutputDevice, DigitalOutputDevice
 from interrupt import STOP_EVENT, MOTOR_LOCK
 
-### if motors too fast lower speed value ###
-
 # LEFT FRONT
 lf_enable = PWMOutputDevice(16)
 lf_in1 = DigitalOutputDevice(20)

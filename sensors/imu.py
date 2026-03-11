@@ -1,15 +1,9 @@
-# sensors/imu.py
 import time
-from mpu6050 import mpu6050  # your class file
+from mpu6050 import mpu6050 
 
-_imu = None  # global instance
-
+_imu = None 
 
 def init_imu(address=0x68):
-    """
-    Initialize the MPU6050 IMU.
-    Creates the sensor once—safe to call multiple times.
-    """
     global _imu
     if _imu is None:
         _imu = mpu6050(address)
@@ -17,35 +11,24 @@ def init_imu(address=0x68):
 
 
 def get_accel():
-    """
-    Returns accelerometer data in m/s^2
-    (ax, ay, az)
-    """
     imu = init_imu()
-    data = imu.get_accel_data()   # your class already converts to m/s²
+    data = imu.get_accel_data()   
     return data['x'], data['y'], data['z']
 
 
 def get_gyro():
-    """
-    Returns gyro data in deg/sec
-    (gx, gy, gz)
-    """
     imu = init_imu()
     data = imu.get_gyro_data()
     return data['x'], data['y'], data['z']
 
 
 def get_all():
-    """
-    Returns both: (ax, ay, az, gx, gy, gz)
-    """
     ax, ay, az = get_accel()
     gx, gy, gz = get_gyro()
     return ax, ay, az, gx, gy, gz
 
 
-# Quick test mode (optional)
+# Quick test 
 if __name__ == "__main__":
     imu = init_imu()
     print("MPU6050 Initialized")

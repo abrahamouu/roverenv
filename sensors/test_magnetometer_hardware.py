@@ -1,4 +1,3 @@
-# tests/test_magnetometer_hardware.py
 import time
 import statistics
 from magnetometer import read_mag_raw, get_heading_basic

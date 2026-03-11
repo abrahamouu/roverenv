@@ -1,9 +1,9 @@
+# deprecated but used as dependency
 import requests
 import time
 
 def get_location():
     try:
-        # Query the IP geolocation API
         response = requests.get("http://ip-api.com/json/")
         data = response.json()
 

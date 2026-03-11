@@ -1,12 +1,4 @@
-# navigation.py
-"""
-Navigation using IMU dead reckoning with GPS correction.
-Uses a complementary filter approach:
-- IMU gives fast position updates between GPS fixes
-- GPS periodically corrects accumulated drift
-- Magnetometer gives reliable heading
-- Acceleration threshold filters out noise when stationary
-"""
+
 import time
 import math
 import config
@@ -33,11 +25,7 @@ class Navigator:
 
         # Timing
         self.last_update_time = None
-
-        # GPS resync tracking
         self.last_gps_sync = time.time()
-
-        # Stationary detection — collect resting accel noise floor at startup
         self._accel_noise_threshold = config.ACCEL_NOISE_THRESHOLD
 
         print(f"Navigator initialized (IMU freq: {config.IMU_FREQUENCY}Hz)")
@@ -49,25 +37,18 @@ class Navigator:
         print(f"Destination set: ({x:.1f}, {y:.1f}), distance: {dist:.2f}m")
 
     def reset_position(self, x, y):
-        """
-        GPS correction — blend GPS position with IMU position
-        rather than hard-resetting, to avoid sudden jumps.
-        """
-        # Complementary filter: trust GPS more the longer since last sync
         time_since_sync = time.time() - self.last_gps_sync
         gps_weight = min(1.0, time_since_sync / config.GPS_UPDATE_INTERVAL)
 
         self.x = (1 - gps_weight) * self.x + gps_weight * x
         self.y = (1 - gps_weight) * self.y + gps_weight * y
 
-        # Always reset velocity on GPS sync to kill accumulated drift
         self.vx = 0.0
         self.vy = 0.0
         self.last_gps_sync = time.time()
         print(f"GPS correction (weight={gps_weight:.2f}): ({self.x:.2f}, {self.y:.2f})")
 
     def hard_reset_position(self, x, y):
-        """Force position to exact value — use only at startup."""
         self.x = x
         self.y = y
         self.vx = 0.0
@@ -76,11 +57,6 @@ class Navigator:
         print(f"Position hard reset: ({x:.2f}, {y:.2f})")
 
     def _is_moving(self, ax, ay):
-        """
-        Detect if rover is actually moving or just reading accel noise.
-        Returns False if acceleration magnitude is below noise threshold.
-        This prevents noise from accumulating into fake velocity/position.
-        """
         accel_magnitude = math.sqrt(ax**2 + ay**2)
         return accel_magnitude > self._accel_noise_threshold
 
@@ -102,20 +78,17 @@ class Navigator:
         ay_body -= config.ACCEL_BIAS_Y
         az_body -= 9.80665
 
-        # Use accel magnitude only to detect moving vs stopped
-        # Don't integrate it — motor vibration makes it too noisy
         accel_magnitude = math.sqrt(ax_body**2 + ay_body**2)
         is_moving = accel_magnitude > config.ACCEL_NOISE_THRESHOLD
 
         if is_moving:
-            # Use fixed speed model — much more reliable than double integration
-            # on a vibrating rover. Tune ESTIMATED_SPEED to match reality.
+            # fixed speed model
             speed = config.ESTIMATED_SPEED
             heading_rad = math.radians(heading)
             self.vx = speed * math.sin(heading_rad)
             self.vy = speed * math.cos(heading_rad)
         else:
-            # Decay velocity quickly when stopped
+            # velocity delay quickly when stopped
             self.vx *= 0.5
             self.vy *= 0.5
 

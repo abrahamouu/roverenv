@@ -1,9 +1,3 @@
-# main.py
-"""
-Main control loop - ties everything together.
-Coordinates sensors, navigation, and motors.
-Destination set in local XY meters relative to starting position.
-"""
 import time
 import config
 from imu import init_imu
@@ -19,34 +13,25 @@ class RoverController:
     def __init__(self):
         print("Initializing rover systems...")
 
-        # Initialize sensors
         init_imu()
         init_mag()
         init_gps()
 
-        # Initialize navigator
         self.nav = Navigator()
 
-        # Wait for initial GPS fix
         lat, lon = self._wait_for_gps_fix(max_attempts=30)
         if lat is None:
             raise RuntimeError("Could not get GPS fix during initialization. "
                                "Check antenna and gpsd service.")
 
         set_reference_point(lat, lon)
-        self.nav.hard_reset_position(0, 0)  # hard reset only at startup
+        self.nav.hard_reset_position(0, 0)
         print(f"Rover initialized at: {lat:.6f}, {lon:.6f}")
 
         self.last_gps_update = time.time()
         self.running = False
 
-
-    # ------------------------------------------------------------------ #
-    #  GPS helpers
-    # ------------------------------------------------------------------ #
-
     def _wait_for_gps_fix(self, max_attempts=30):
-        """Block until a valid GPS fix is obtained or attempts are exhausted."""
         print(f"Waiting for GPS fix (up to {max_attempts}s)...")
         for attempt in range(max_attempts):
             lat, lon = get_position()
@@ -58,45 +43,25 @@ class RoverController:
         return None, None
 
     def update_from_gps(self):
-        """Resync position from GPS using complementary filter blend."""
         lat, lon = get_position()
         if lat is not None and lon is not None:
             x, y = latlon_to_xy(lat, lon)
-            self.nav.reset_position(x, y)  # soft blend, not hard reset
+            self.nav.reset_position(x, y)
             if config.DEBUG_PRINT_NAVIGATION:
                 print(f"GPS resync: ({x:.2f}, {y:.2f})")
             return lat, lon
         return None, None
-
-    # ------------------------------------------------------------------ #
-    #  Destination setters
-    # ------------------------------------------------------------------ #
-
+    
     def set_destination_latlon(self, dest_lat, dest_lon):
-        """Set destination using GPS coordinates."""
         dest_x, dest_y = latlon_to_xy(dest_lat, dest_lon)
         self.nav.set_destination(dest_x, dest_y)
         print(f"Destination: {dest_lat:.6f}, {dest_lon:.6f} -> ({dest_x:.1f}m, {dest_y:.1f}m)")
 
     def set_destination_xy(self, x, y):
-        """Set destination using local XY meters relative to start position.
-        x = East (+) / West (-)
-        y = North (+) / South (-)
-        Examples:
-            set_destination_xy(-3, 0)  -> 3 meters West
-            set_destination_xy(0, 5)   -> 5 meters North
-            set_destination_xy(3, 3)   -> 3m East, 3m North
-        """
         self.nav.set_destination(x, y)
 
-    # ------------------------------------------------------------------ #
-    #  Control loop
-    # ------------------------------------------------------------------ #
-
+    # control loop
     def control_loop(self):
-        """Single iteration of sense -> decide -> act."""
-
-        # ---- UI / API CONTROL HOOK ----
         stop = False
         new_dest = None
 
@@ -118,14 +83,13 @@ class RoverController:
         if new_dest is not None:
             self.set_destination_xy(*new_dest)
 
-        # ---- NAVIGATION ----
         command, speed = self.nav.get_navigation_command()
 
-        # Update dead-reckoning only when moving forward
+        # Update only when moving forward
         if command == 'forward':
             state = self.nav.update_position()
             if state is None:
-                return  # First iteration, no dt yet
+                return
         else:
             from magnetometer import get_heading_basic
             state = {
@@ -137,11 +101,6 @@ class RoverController:
                 'ax_body': 0, 'ay_body': 0, 'az_body': 0,
                 'ax_earth': 0, 'ay_earth': 0
             }
-
-        # # Periodic GPS resync
-        # if self.nav.should_resync_gps():
-        #     self.update_from_gps()
-        #     self.last_gps_update = time.time()
 
         # ---- MOTOR COMMANDS ----
         if command == 'forward':
@@ -170,7 +129,6 @@ class RoverController:
                   f"Dist:{dist:.1f}m HErr:{heading_err:.1f}° Cmd:{command}")
 
     def run(self):
-        """Run the control loop until destination reached or stopped."""
         self.running = True
         loop_time = 1.0 / config.IMU_FREQUENCY
 
@@ -182,24 +140,19 @@ class RoverController:
 
                 self.control_loop()
 
-                # Maintain loop timing
                 elapsed = time.time() - start
                 if elapsed < loop_time:
                     time.sleep(loop_time - elapsed)
 
             motor_helper.stop()
-            self.running = False #for multi node traversal to enable clean reuse
+            self.running = False 
             print("Navigation complete!")
 
         except KeyboardInterrupt:
             print("\nStopping...")
             motor_helper.stop()
 
-
-# ------------------------------------------------------------------ #
-#  Entry point
-# ------------------------------------------------------------------ #
-
+# testing node traversal
 if __name__ == "__main__":
     rover = RoverController()
 

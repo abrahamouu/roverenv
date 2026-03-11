@@ -1,4 +1,3 @@
-# sensors/magnetometer.py
 import math
 from bmm150 import BMM150
 
@@ -15,21 +14,14 @@ def ensure_initialized():
     if _mag is None:
         init_mag()
 
-
 def read_mag_raw():
     ensure_initialized()
     return _mag.read_mag_data()
 
-
 def get_heading_basic():
-    """
-    Simple heading (NOT tilt compensated).
-    """
     mx, my, mz = read_mag_raw()
 
     heading = math.degrees(math.atan2(-my, mx))
     if heading < 0:
         heading += 360
-    
-
     return heading

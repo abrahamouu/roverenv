@@ -1,13 +1,7 @@
-# gps_manager.py
-"""
-GPS management - handles IP geolocation, gpsd, or raw serial GPS.
-Provides consistent interface regardless of source.
-"""
 import math
 import config
 from iplocation import get_location
 
-# For gpsd
 _gpsd_connected = False
 if not config.USE_IP_GEOLOCATION:
     try:
@@ -16,7 +10,6 @@ if not config.USE_IP_GEOLOCATION:
         print("Warning: gpsd-py3 not installed. Run: pip3 install gpsd-py3")
 
 def init_gps():
-    """Initialize GPS - either IP geo or gpsd based on config."""
     global _gpsd_connected
     
     # if config.USE_IP_GEOLOCATION:
@@ -37,10 +30,6 @@ def init_gps():
     return False
 
 def get_position():
-    """
-    Returns current position as (lat, lon) tuple.
-    Uses IP geo or gpsd based on config.
-    """
     if config.USE_IP_GEOLOCATION:
         lat, lon = get_location()
         return lat, lon
@@ -48,8 +37,7 @@ def get_position():
     if config.USE_GPSD and _gpsd_connected:
         try:
             packet = gpsd.get_current()
-            
-            # Check for valid fix (mode 2 = 2D fix, mode 3 = 3D fix)
+        
             has_fix = (
                 packet.mode >= 2 and
                 not math.isnan(packet.lat) and
@@ -70,11 +58,7 @@ def get_position():
     return None, None
 
 def haversine_distance(lat1, lon1, lat2, lon2):
-    """
-    Calculate distance between two lat/lon points in meters.
-    Uses Haversine formula.
-    """
-    R = 6371000  # Earth radius in meters
+    R = 6371000
     
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
@@ -88,10 +72,6 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     return R * c
 
 def calculate_bearing(lat1, lon1, lat2, lon2):
-    """
-    Calculate initial bearing from point 1 to point 2 (degrees, 0-360).
-    0° = North, 90° = East, 180° = South, 270° = West
-    """
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
     dlambda = math.radians(lon2 - lon1)

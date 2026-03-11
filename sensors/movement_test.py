@@ -1,9 +1,9 @@
-# movement_test.py
+# used for frontend
 from time import sleep, time
 import motor_helper as mh
 from interrupt import STOP_EVENT
 
-CHECK_INTERVAL = 0.05  # 50ms interrupt resolution
+CHECK_INTERVAL = 0.05  # 50ms interrupt 
 
 def interruptible_sleep(duration):
     start = time()
