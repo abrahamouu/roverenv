@@ -1,5 +1,3 @@
-source /home/pi/roverenv/bin/activate
-
 source roverenv/bin/activate
 
 # installation for rpi for backend server

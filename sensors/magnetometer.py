@@ -22,6 +22,8 @@ def get_heading_basic():
     mx, my, mz = read_mag_raw()
 
     heading = math.degrees(math.atan2(-my, mx))
+    # error w/ magnetometer
+    heading += 20
     if heading < 0:
         heading += 360
     return heading
